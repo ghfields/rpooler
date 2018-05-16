@@ -1,12 +1,11 @@
 #!/bin/bash
+echo ""
+echo "Installer script for ZFS whole disk installation using Ubuntu GUI (Ubiquity)"
+echo "----------------------------------------------------------------------------" 
 if [[ $EUID -ne 0 ]]; then
      echo "This script must be run as root"
      exit 1
 fi
-#sudo su   (run from an root prompt)
-echo ""
-echo "Installer script for ZFS whole disk installation using Ubuntu GUI (Ubiquity)"
-echo "----------------------------------------------------------------------------" 
 read -p "What do you want to name your pool? " -i "rpool" -e POOL
 ## read -p "Where on the pool do you want your OS installed? " -i "ROOT/ubuntu-1" -e FILESYSTEM  (TODO: Need to parse and feed to 'zpool create')
 echo ""
