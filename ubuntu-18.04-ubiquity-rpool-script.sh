@@ -16,16 +16,13 @@ echo ""
 read -p "Which zpool & zfs options do you wish to set at creation? " -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e OPTIONS
 
 while true; do
-    read -p "Ubiquity made swapfile is removed.  Want to use a swap zvol?" yn
+    read -p "Ubiquity made swapfile is removed.  Want to use a swap zvol (size: 4GB)?" yn
     case $yn in
         [Yy]* ) SWAPZVOL=4; break;;
         [Nn]* ) SWAPZVOL=0; break;;
         * ) echo "Please answer yes or no.";;
     esac
 done
-
-
-
 
 
 read -p "Provide an IP of a nameserver available on your network: " -i "8.8.8.8" -e NAMESERVER
@@ -69,7 +66,7 @@ sed -e '/\s\/\s/ s/^#*/#/' -i /$POOL/ROOT/ubuntu-1/etc/fstab  #My take at commen
 sed -e '/\sswap\s/ s/^#*/#/' -i /$POOL/ROOT/ubuntu-1/etc/fstab #My take at comment out swap line.
 
 if [[ $SWAPZVOL -ne 0 ]]; then
-     zfs create create -V $SWAPZVOL -b $(getconf PAGESIZE) -o compression=zle \
+     zfs create create -V "$SWAPZVOL"G -b $(getconf PAGESIZE) -o compression=zle \
       -o logbias=throughput -o sync=always \
       -o primarycache=metadata -o secondarycache=none \
       -o com.sun:auto-snapshot=false $POOL/swap
