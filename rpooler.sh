@@ -22,7 +22,6 @@ echo "The Ubiquity made swapfile will not function and will be removed."
 echo "Based on your system's $systemramg GB of RAM, Ubuntu suggests a swap of $suggestswap GB."
 read -p "What size, in GB, should the created swap zvol be? (0 for none): " -e -i $suggestswap swapzvol
 
-read -p "Provide an IP of a nameserver available on your network: " -i "8.8.8.8" -e nameserver
 drives="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
 
 apt install -y zfsutils
@@ -50,7 +49,7 @@ rsync -avPX /target/. /$pool/ROOT/ubuntu-1/.
 
 for d in proc sys dev; do mount --bind /$d /$pool/ROOT/ubuntu-1/$d; done
 
-echo "nameserver " $nameserver | tee -a /$pool/ROOT/ubuntu-1/etc/resolv.conf
+cp /etc/resolv.conf /$pool/ROOT/ubuntu-1/etc/resolv.conf
 sed -e '/\s\/\s/ s/^#*/#/' -i /$pool/ROOT/ubuntu-1/etc/fstab  #My take at comment out / line.
 sed -e '/\sswap\s/ s/^#*/#/' -i /$pool/ROOT/ubuntu-1/etc/fstab #My take at comment out swap line.
 
