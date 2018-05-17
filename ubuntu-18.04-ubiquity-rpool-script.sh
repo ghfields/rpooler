@@ -50,10 +50,6 @@ ubiquity --no-bootloader
 zfs create $POOL/ROOT
 zfs create $POOL/ROOT/ubuntu-1
 
-if [[ $SWAPZVOL -ne 0 ]]; then
-fi
-
-
 rsync -avPX /target/. /$POOL/ROOT/ubuntu-1/.
 
 for d in proc sys dev; do mount --bind /$d /$POOL/ROOT/ubuntu-1/$d; done
@@ -72,7 +68,7 @@ if [[ $SWAPZVOL -ne 0 ]]; then
       -o com.sun:auto-snapshot=false $POOL/swap
      mkswap -f /dev/zvol/$POOL/swap
      echo RESUME=none > /$POOL/ROOT/ubuntu-1/etc/initramfs-tools/conf.d/resume
-     echo /dev/zvol/rpool/swap none swap defaults 0 0 >> /$POOL/ROOT/ubuntu-1/etc/fstab
+     echo /dev/zvol/$POOL/swap none swap defaults 0 0 >> /$POOL/ROOT/ubuntu-1/etc/fstab
 fi
 
 chroot /$POOL/ROOT/ubuntu-1 apt update
