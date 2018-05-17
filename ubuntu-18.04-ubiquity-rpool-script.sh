@@ -7,7 +7,6 @@ if [[ $EUID -ne 0 ]]; then
      exit 1
 fi
 read -p "What do you want to name your pool? " -i "rpool" -e pool
-## read -p "Where on the pool do you want your OS installed? " -i "ROOT/ubuntu-1" -e filesystem  (TODO: Need to parse and feed to 'zpool create')
 echo ""
 echo "These are the drives on your system:"
 for i in $(ls /dev/disk/by-id/ -a |grep -v part |awk '{if(NR>2)print}');do echo -e ' \t' "/dev/disk/by-id/"$i;done
@@ -25,7 +24,7 @@ while true; do
 done
 
 read -p "Provide an IP of a nameserver available on your network: " -i "8.8.8.8" -e nameserver
-DRIVES="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
+drives="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
 
 apt install -y zfsutils
 zpool create -f $options $pool $layout
@@ -52,9 +51,6 @@ rsync -avPX /target/. /$pool/ROOT/ubuntu-1/.
 
 for d in proc sys dev; do mount --bind /$d /$pool/ROOT/ubuntu-1/$d; done
 
-#nano /etc/fstab         ## comment out the lines for the mountpoint "/" and "/swapfile" and exit
-#sudo sed -i -e 's,^/ ,#/ ,' /etc/fstab  #Reddit take to comment out / line. Need to repeat for swapfile
-
 echo "nameserver " $nameserver | tee -a /$pool/ROOT/ubuntu-1/etc/resolv.conf
 sed -e '/\s\/\s/ s/^#*/#/' -i /$pool/ROOT/ubuntu-1/etc/fstab  #My take at comment out / line.
 sed -e '/\sswap\s/ s/^#*/#/' -i /$pool/ROOT/ubuntu-1/etc/fstab #My take at comment out swap line.
@@ -72,7 +68,7 @@ fi
 chroot /$pool/ROOT/ubuntu-1 apt update
 chroot /$pool/ROOT/ubuntu-1 apt install -y zfs-initramfs
 chroot /$pool/ROOT/ubuntu-1 update-grub
-for i in $DRIVES; do chroot /$pool/ROOT/ubuntu-1 sgdisk -a1 -n2:512:2047 -t2:EF02 $i;chroot /$pool/ROOT/ubuntu-1 grub-install $i;done
+for i in $drives; do chroot /$pool/ROOT/ubuntu-1 sgdisk -a1 -n2:512:2047 -t2:EF02 $i;chroot /$pool/ROOT/ubuntu-1 grub-install $i;done
 rm /$pool/ROOT/ubuntu-1/swapfile
 
 umount -R /$pool/ROOT/ubuntu-1
@@ -85,5 +81,4 @@ zpool export $pool
 echo ""
 echo "Script complete.  Please reboot your computer to boot into your installation."
 echo "If first boot hangs, reset computer and try boot again."
-#shutdown -r 0
 exit 0
