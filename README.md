@@ -6,6 +6,6 @@ Instructions:
 2) Select "Try Ubuntu"
 3) Open terminal (Ctrl+Alt+t)
 4) wget https://raw.githubusercontent.com/ghfields/ubuntu-zfs-rpool-scripts/master/ubuntu-18.04-ubiquity-rpool-script.sh
-5) chmod +x ubuntu-zfs-rpool-scripts/master/ubuntu-18.04-ubiquity-rpool-script.sh
+5) chmod +x ubuntu-18.04-ubiquity-rpool-script.sh
 6) sudo su
-7)./ubuntu-zfs-rpool-scripts/master/ubuntu-18.04-ubiquity-rpool-script.sh
+7)./ubuntu-18.04-ubiquity-rpool-script.sh
