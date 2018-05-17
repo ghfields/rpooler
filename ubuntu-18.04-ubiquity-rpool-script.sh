@@ -62,7 +62,7 @@ sed -e '/\s\/\s/ s/^#*/#/' -i /$POOL/ROOT/ubuntu-1/etc/fstab  #My take at commen
 sed -e '/\sswap\s/ s/^#*/#/' -i /$POOL/ROOT/ubuntu-1/etc/fstab #My take at comment out swap line.
 
 if [[ $SWAPZVOL -ne 0 ]]; then
-     zfs create create -V "$SWAPZVOL"G -b $(getconf PAGESIZE) -o compression=zle \
+     zfs create -V "$SWAPZVOL"G -b $(getconf PAGESIZE) -o compression=zle \
       -o logbias=throughput -o sync=always \
       -o primarycache=metadata -o secondarycache=none \
       -o com.sun:auto-snapshot=false $POOL/swap
