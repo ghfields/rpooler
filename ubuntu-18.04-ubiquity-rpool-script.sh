@@ -24,7 +24,6 @@ while true; do
     esac
 done
 
-
 read -p "Provide an IP of a nameserver available on your network: " -i "8.8.8.8" -e NAMESERVER
 DRIVES="$(echo $LAYOUT | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
 
