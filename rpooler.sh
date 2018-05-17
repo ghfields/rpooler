@@ -15,12 +15,12 @@ echo ""
 read -p "Which zpool & zfs options do you wish to set at creation? " -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
 
 systemramk=$(free -m | awk '/^Mem:/{print $2}')
-systemramg=$(echo "scale=2; systemramk/1024" | bc)
+systemramg=$(echo "scale=2; $systemramk/1024" | bc)
 suggestswap=$(printf %.$2f $(echo "scale=2; sqrt($systemramk/1024)" | bc))
 echo ""
 echo "The Ubiquity made swapfile will not function and will be removed."
 echo "Based on your system's '$systemramg' GB of RAM, Ubuntu suggests a swap of '$suggestswap'G."
-read -p "What size, in GB, should the created swap zvol be? (0 for none):" -i "$suggestswap" swapzvol
+read -p "What size, in GB, should the created swap zvol be? (0 for none): " -e -i $suggestswap swapzvol
 
 read -p "Provide an IP of a nameserver available on your network: " -i "8.8.8.8" -e nameserver
 drives="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
