@@ -81,4 +81,15 @@ zpool export $pool
 echo ""
 echo "Script complete.  Please reboot your computer to boot into your installation."
 echo "If first boot hangs, reset computer and try boot again."
+echo ""
+
+while true; do
+    read -p "Do you want to restart now?" yn
+    case $yn in
+        [Yy]* ) shutdown -r 0; break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+
+done
 exit 0
