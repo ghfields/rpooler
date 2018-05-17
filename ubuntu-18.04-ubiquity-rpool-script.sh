@@ -49,7 +49,6 @@ ubiquity --no-bootloader
 
 zfs create $POOL/ROOT
 zfs create $POOL/ROOT/ubuntu-1
-
 rsync -avPX /target/. /$POOL/ROOT/ubuntu-1/.
 
 for d in proc sys dev; do mount --bind /$d /$POOL/ROOT/ubuntu-1/$d; done
