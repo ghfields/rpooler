@@ -8,4 +8,4 @@ Instructions:
 4) wget https://raw.githubusercontent.com/ghfields/ubuntu-zfs-rpool-scripts/master/ubuntu-18.04-ubiquity-rpool-script.sh
 5) chmod +x ubuntu-18.04-ubiquity-rpool-script.sh
 6) sudo su
-7)./ubuntu-18.04-ubiquity-rpool-script.sh
+7) ./ubuntu-18.04-ubiquity-rpool-script.sh
