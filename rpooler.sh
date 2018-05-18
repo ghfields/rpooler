@@ -2,10 +2,18 @@
 echo ""
 echo "Installer script for ZFS whole disk installation using Ubuntu GUI (Ubiquity)"
 echo "----------------------------------------------------------------------------" 
+
+distver=$(lsb_release -cs)
+if [ "$distver" != "bionic" ]; then
+     echo "This script requires Ubuntu 18.04 to run."
+     exit 1
+fi
+
 if [[ $EUID -ne 0 ]]; then
      echo "This script must be run as root"
      exit 1
 fi
+
 read -p "What do you want to name your pool? " -i "rpool" -e pool
 echo ""
 echo "These are the drives on your system:"
