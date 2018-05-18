@@ -33,7 +33,7 @@ suggestswap=$(printf %.$2f $(echo "scale=2; sqrt($systemramk/1024)" | bc))
 echo ""
 echo "The Ubiquity made swapfile will not function and will be removed."
 echo "Based on your system's $systemramg GB of RAM, Ubuntu suggests a swap of $suggestswap GB."
-echo -en $green "What size, in GB, should the created swap zvol be? (0 for none): " $nocolor
+echo -e $green "What size, in GB, should the created swap zvol be? (0 for none): " $nocolor
 read -e -i $suggestswap swapzvol
 
 drives="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
