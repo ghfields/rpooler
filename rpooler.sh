@@ -14,13 +14,13 @@ if [[ $EUID -ne 0 ]]; then
      exit 1
 fi
 
-read -p "What do you want to name your pool? " -i "rpool" -e pool
+read -p $'\e[92mWhat do you want to name your pool? \e[0m' -i "rpool" -e pool
 echo ""
 echo "These are the drives on your system:"
 for i in $(ls /dev/disk/by-id/ -a |grep -v part |awk '{if(NR>2)print}');do echo -e ' \t' "/dev/disk/by-id/"$i;done
-read -p "What vdev layout do you want to use? (hint: tab completion works): " -e layout
+read -p $'\e[92mWhat vdev layout do you want to use? (hint: tab completion works): \e[0m' -e layout
 echo ""
-read -p "Which zpool & zfs options do you wish to set at creation? " -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
+read -p $'\e[92mWhich zpool & zfs options do you wish to set at creation? \e[0m' -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
 
 systemramk=$(free -m | awk '/^Mem:/{print $2}')
 systemramg=$(echo "scale=2; $systemramk/1024" | bc)
@@ -28,7 +28,7 @@ suggestswap=$(printf %.$2f $(echo "scale=2; sqrt($systemramk/1024)" | bc))
 echo ""
 echo "The Ubiquity made swapfile will not function and will be removed."
 echo "Based on your system's $systemramg GB of RAM, Ubuntu suggests a swap of $suggestswap GB."
-read -p "What size, in GB, should the created swap zvol be? (0 for none): " -e -i $suggestswap swapzvol
+read -p $'\e[92mWhat size, in GB, should the created swap zvol be? (0 for none): \e[0m' -e -i $suggestswap swapzvol
 
 drives="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
 
@@ -81,7 +81,7 @@ umount -R /$pool/ROOT/ubuntu-1
 zfs set mountpoint=/ $pool/ROOT/ubuntu-1
 
 while true; do
-    read -p "Would you like to create a snapshot before rebooting?: " -i "y" yn
+    read -p $'\e[92mWould you like to create a snapshot before rebooting? :\e[0m' -i "y" yn
     case $yn in
         [Yy]* ) zfs snapshot $pool/ROOT/ubuntu-1@pre-reboot; break;;
         [Nn]* ) break;;
@@ -100,7 +100,7 @@ echo "If first boot hangs, reset computer and try boot again."
 echo ""
 
 while true; do
-    read -p "Do you want to restart now?" yn
+    read -p $'\e[92mDo you want to restart now? \e[0m' yn
     case $yn in
         [Yy]* ) shutdown -r 0; break;;
         [Nn]* ) break;;
