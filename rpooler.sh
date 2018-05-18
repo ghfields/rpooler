@@ -1,6 +1,6 @@
 #!/bin/bash
 green='\e[92m'
-nocolor='\[0m'
+nocolor='\e[0m'
 echo ""
 echo "Installer script for ZFS whole disk installation using Ubuntu GUI (Ubiquity)"
 echo "----------------------------------------------------------------------------" 
