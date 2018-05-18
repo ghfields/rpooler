@@ -71,6 +71,16 @@ rm /$pool/ROOT/ubuntu-1/swapfile
 
 umount -R /$pool/ROOT/ubuntu-1
 zfs set mountpoint=/ $pool/ROOT/ubuntu-1
+
+while true; do
+    read -p "Would you like to create a snapshot before rebooting?: " -i "y" yn
+    case $yn in
+        [Yy]* ) zfs snapshot $pool/ROOT/ubuntu-1@pre-reboot; break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+
+done
 zfs snapshot $pool/ROOT/ubuntu-1@pre-reboot
 swapoff -a
 umount /target
