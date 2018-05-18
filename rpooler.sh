@@ -16,15 +16,15 @@ if [[ $EUID -ne 0 ]]; then
      exit 1
 fi
 
-echo -en $green "What do you want to name your pool? " $nocolor
+echo -e $green "What do you want to name your pool? " $nocolor
 read -i "rpool" -e pool
 echo ""
 echo "These are the drives on your system:"
 for i in $(ls /dev/disk/by-id/ -a |grep -v part |awk '{if(NR>2)print}');do echo -e ' \t' "/dev/disk/by-id/"$i;done
-echo -en $green "What vdev layout do you want to use? (hint: tab completion works): " $nocolor
+echo -e $green "What vdev layout do you want to use? (hint: tab completion works): " $nocolor
 read -e layout
 echo ""
-echo -en $green "Which zpool & zfs options do you wish to set at creation? " $nocolor
+echo -e $green "Which zpool & zfs options do you wish to set at creation? " $nocolor
 read -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
 
 systemramk=$(free -m | awk '/^Mem:/{print $2}')
@@ -87,7 +87,7 @@ umount -R /$pool/ROOT/ubuntu-1
 zfs set mountpoint=/ $pool/ROOT/ubuntu-1
 
 while true; do
-    echo -en $green 'Would you like to create a snapshot before rebooting? : ' $nocolor
+    echo -e $green 'Would you like to create a snapshot before rebooting? : ' $nocolor
     read -i "y" yn
     case $yn in
         [Yy]* ) zfs snapshot $pool/ROOT/ubuntu-1@pre-reboot; break;;
@@ -107,7 +107,7 @@ echo "If first boot hangs, reset computer and try boot again."
 echo ""
 
 while true; do
-    echo -en $green 'Do you want to restart now? ' $nocolor
+    echo -e $green 'Do you want to restart now? ' $nocolor
     read -e yn
     case $yn in
         [Yy]* ) shutdown -r 0; break;;
