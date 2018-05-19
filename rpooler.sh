@@ -18,7 +18,7 @@ fi
 
 apt install -y zfsutils &> /dev/null
 
-while [[ $exitpoolselect == "0" ]]; do
+while [[ $exitpoolselect == "" ]]; do
      echo -e $green "What do you want to name your pool? " $nocolor
      read -i "rpool" -e pool
      echo ""
@@ -30,7 +30,7 @@ while [[ $exitpoolselect == "0" ]]; do
      echo -e $green "Which zpool & zfs options do you wish to set at creation? " $nocolor
      read -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
      echo ""
-     echo "Zpool" \n
+     echo -n "Zpool "
      if (zpool create -nf $options $pool $layout); then 
           echo ""
           while true; do
@@ -45,14 +45,14 @@ while [[ $exitpoolselect == "0" ]]; do
      else
           echo "Your selections formed an invalid "zpool create" commmand.  Please try again."
      fi
-done               
-               
+done
+
 
 systemramk=$(free -m | awk '/^Mem:/{print $2}')
 systemramg=$(echo "scale=2; $systemramk/1024" | bc)
 suggestswap=$(printf %.$2f $(echo "scale=2; sqrt($systemramk/1024)" | bc))
 
-while [[ exitfilesystemselect == "0" ]]; do
+while [[ exitfilesystemselect == "" ]]; do
      echo ""
      echo "The Ubiquity made swapfile will not function and will be removed."
      echo "Based on your system's $systemramg GB of RAM, Ubuntu suggests a swap of $suggestswap GB."
