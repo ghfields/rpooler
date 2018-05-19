@@ -53,7 +53,7 @@ systemramk=$(free -m | awk '/^Mem:/{print $2}')
 systemramg=$(echo "scale=2; $systemramk/1024" | bc)
 suggestswap=$(printf %.$2f $(echo "scale=2; sqrt($systemramk/1024)" | bc))
 
-while [[ exitfilesystemselect == "" ]]; do
+while [[ $exitfilesystemselect == "" ]]; do
      echo ""
      echo "The Ubiquity made swapfile will not function and will be removed."
      echo "Based on your system's $systemramg GB of RAM, Ubuntu suggests a swap of $suggestswap GB."
