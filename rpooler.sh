@@ -28,7 +28,7 @@ while [ $exitselectionwhile == "0"]; do
      echo ""
      echo -e $green "Which zpool & zfs options do you wish to set at creation? " $nocolor
      read -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
-     if [zpool create -nf $options $pool $layout ]; then 
+     if [zpool create -nf $options $pool $layout &> /dev/null]; then 
           echo ""
           echo "You selections:"
           echo "Pool name: $pool"
