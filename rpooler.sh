@@ -96,7 +96,6 @@ while true; do
     esac
 
 done
-zfs snapshot $pool/ROOT/ubuntu-1@pre-reboot
 swapoff -a
 umount /target
 zfs destroy $pool/ubuntu-temp
