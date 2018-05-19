@@ -62,7 +62,7 @@ while [[ $exitfilesystemselect == "" ]]; do
      echo "Zvol swap size: $swapzvol GB"
      while true; do
           echo -e $green "Is this correct (y/n):" $nocolor
-          read -i "y" yn
+          read -i "y" -e yn
           case $yn in
              [Yy]* ) exitfilesystemselect="1"; break;;
              [Nn]* ) break;;
