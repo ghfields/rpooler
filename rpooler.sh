@@ -121,9 +121,9 @@ zfs set mountpoint=/ $pool/ROOT/ubuntu-1
 
 while true; do
     echo -e $green 'Would you like to create a snapshot before rebooting? : ' $nocolor
-    read -i "y" yn
+    read -i "y" -e yn
     case $yn in
-        [Yy]* ) zfs snapshot $pool/ROOT/ubuntu-1@pre-reboot; break;;
+        [Yy]* ) zfs snapshot $pool/ROOT/ubuntu-1@install-pre-reboot; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
