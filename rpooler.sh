@@ -16,8 +16,9 @@ if [[ $EUID -ne 0 ]]; then
      exit 1
 fi
 
-exitpoolselection="0"
-while [ $exitselectionwhile == "0"]; do
+apt install -y zfsutils &> /dev/null
+
+while [ $exitpoolselect == "0"]; do
      echo -e $green "What do you want to name your pool? " $nocolor
      read -i "rpool" -e pool
      echo ""
@@ -28,20 +29,19 @@ while [ $exitselectionwhile == "0"]; do
      echo ""
      echo -e $green "Which zpool & zfs options do you wish to set at creation? " $nocolor
      read -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
-     if [zpool create -nf $options $pool $layout &> /dev/null]; then 
+     echo ""
+     echo "Zpool" \n
+     if [zpool create -nf $options $pool $layout]; then 
           echo ""
-          echo "You selections:"
-          echo "Pool name: $pool"
-          echo "Pool options: $options"
-          echo "Pool layout: $layout"
           while true; do
-               echo -e $green "Are these correct (y/n):" $nocolor
+               echo -e $green "Does this look correct (y/n):" $nocolor
                read -i "y" yn
                case $yn in
-                    [Yy]* ) exitpoolselection="1"; break;;
+                    [Yy]* ) exitpoolselect="1"; break;;
                     [Nn]* ) break;;
                     * ) echo "Please answer yes or no.";;
                esac
+          done
      else
           echo "Your selections formed an invalid "zpool create" commmand.  Please try again."
 done               
@@ -50,7 +50,7 @@ done
 systemramk=$(free -m | awk '/^Mem:/{print $2}')
 systemramg=$(echo "scale=2; $systemramk/1024" | bc)
 suggestswap=$(printf %.$2f $(echo "scale=2; sqrt($systemramk/1024)" | bc))
-exitfilesystemselect="0"
+
 while [ exitfilesystemselect == "0" ]; do
      echo ""
      echo "The Ubiquity made swapfile will not function and will be removed."
@@ -59,17 +59,16 @@ while [ exitfilesystemselect == "0" ]; do
      read -e -i $suggestswap swapzvol
      echo "Zvol swap size: $swapzvol GB"
      while true; do
-          echo -e $green "Are these correct (y/n):" $nocolor
+          echo -e $green "Is this correct (y/n):" $nocolor
           read -i "y" yn
           case $yn in
              [Yy]* ) exitfilesystemselect="1"; break;;
              [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
      esac
-    
+    done
 done
 
-apt install -y zfsutils
 zpool create -f $options $pool $layout
 zfs create -V 10G $pool/ubuntu-temp
 
