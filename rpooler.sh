@@ -16,27 +16,58 @@ if [[ $EUID -ne 0 ]]; then
      exit 1
 fi
 
-echo -e $green "What do you want to name your pool? " $nocolor
-read -i "rpool" -e pool
-echo ""
-echo "These are the drives on your system:"
-for i in $(ls /dev/disk/by-id/ -a |grep -v part |awk '{if(NR>2)print}');do echo -e ' \t' "/dev/disk/by-id/"$i;done
-echo -e $green "What vdev layout do you want to use? (hint: tab completion works): " $nocolor
-read -e layout
-echo ""
-echo -e $green "Which zpool & zfs options do you wish to set at creation? " $nocolor
-read -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
+exitpoolselection="0"
+while [ $exitselectionwhile == "0"]; do
+     echo -e $green "What do you want to name your pool? " $nocolor
+     read -i "rpool" -e pool
+     echo ""
+     echo "These are the drives on your system:"
+     for i in $(ls /dev/disk/by-id/ -a |grep -v part |awk '{if(NR>2)print}');do echo -e ' \t' "/dev/disk/by-id/"$i;done
+     echo -e $green "What vdev layout do you want to use? (hint: tab completion works): " $nocolor
+     read -e layout
+     echo ""
+     echo -e $green "Which zpool & zfs options do you wish to set at creation? " $nocolor
+     read -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
+     if [zpool create -nf $options $pool $layout ]; then 
+          echo ""
+          echo "You selections:"
+          echo "Pool name: $pool"
+          echo "Pool options: $options"
+          echo "Pool layout: $layout"
+          while true; do
+               echo -e $green "Are these correct (y/n):" $nocolor
+               read -i "y" yn
+               case $yn in
+                    [Yy]* ) exitpoolselection="1"; break;;
+                    [Nn]* ) break;;
+                    * ) echo "Please answer yes or no.";;
+               esac
+     else
+          echo "Invalid selections.  Please try again."
+done               
+               
 
 systemramk=$(free -m | awk '/^Mem:/{print $2}')
 systemramg=$(echo "scale=2; $systemramk/1024" | bc)
 suggestswap=$(printf %.$2f $(echo "scale=2; sqrt($systemramk/1024)" | bc))
-echo ""
-echo "The Ubiquity made swapfile will not function and will be removed."
-echo "Based on your system's $systemramg GB of RAM, Ubuntu suggests a swap of $suggestswap GB."
-echo -e $green "What size, in GB, should the created swap zvol be? (0 for none): " $nocolor
-read -e -i $suggestswap swapzvol
-
-drives="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
+exitfilesystemselect="0"
+while [ exitfilesystemselect == "0" ]; do
+     echo ""
+     echo "The Ubiquity made swapfile will not function and will be removed."
+     echo "Based on your system's $systemramg GB of RAM, Ubuntu suggests a swap of $suggestswap GB."
+     echo -e $green "What size, in GB, should the created swap zvol be? (0 for none): " $nocolor
+     read -e -i $suggestswap swapzvol
+     echo "Zvol swap size: $swapzvol GB"
+     while true; do
+          echo -e $green "Are these correct (y/n):" $nocolor
+          read -i "y" yn
+          case $yn in
+             [Yy]* ) exitfilesystemselect="1"; break;;
+             [Nn]* ) break;;
+        * ) echo "Please answer yes or no.";;
+     esac
+    
+done
 
 apt install -y zfsutils
 zpool create -f $options $pool $layout
@@ -80,6 +111,7 @@ fi
 chroot /$pool/ROOT/ubuntu-1 apt update
 chroot /$pool/ROOT/ubuntu-1 apt install -y zfs-initramfs
 chroot /$pool/ROOT/ubuntu-1 update-grub
+drives="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
 for i in $drives; do chroot /$pool/ROOT/ubuntu-1 sgdisk -a1 -n2:512:2047 -t2:EF02 $i;chroot /$pool/ROOT/ubuntu-1 grub-install $i;done
 rm /$pool/ROOT/ubuntu-1/swapfile
 
