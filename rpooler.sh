@@ -31,7 +31,7 @@ while [[ $exitpoolselect == "0" ]]; do
      read -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
      echo ""
      echo "Zpool" \n
-     if [zpool create -nf $options $pool $layout]; then 
+     if (zpool create -nf $options $pool $layout); then 
           echo ""
           while true; do
                echo -e $green "Does this look correct (y/n):" $nocolor
@@ -44,6 +44,7 @@ while [[ $exitpoolselect == "0" ]]; do
           done
      else
           echo "Your selections formed an invalid "zpool create" commmand.  Please try again."
+     fi
 done               
                
 
