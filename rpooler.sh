@@ -35,7 +35,7 @@ while [[ $exitpoolselect == "" ]]; do
           echo ""
           while true; do
                echo -e $green "Does this look correct (y/n):" $nocolor
-               read -i "y" yn
+               read -i "y" -e yn
                case $yn in
                     [Yy]* ) exitpoolselect="1"; break;;
                     [Nn]* ) break;;
@@ -43,6 +43,7 @@ while [[ $exitpoolselect == "" ]]; do
                esac
           done
      else
+          echo ""
           echo "Your selections formed an invalid "zpool create" commmand.  Please try again."
      fi
 done
