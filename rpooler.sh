@@ -43,7 +43,7 @@ while [ $exitselectionwhile == "0"]; do
                     * ) echo "Please answer yes or no.";;
                esac
      else
-          echo "Invalid selections.  Please try again."
+          echo "Your selections formed an invalid "zpool create" commmand.  Please try again."
 done               
                
 
