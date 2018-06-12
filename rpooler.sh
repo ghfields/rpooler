@@ -16,7 +16,11 @@ if [[ $EUID -ne 0 ]]; then
      exit 1
 fi
 
-apt install -y zfsutils &> /dev/null
+if (apt install -y zfsutils &> /dev/null); then;
+else
+    echo "Failed to install zfsutils from the internet.  Please check your connection."
+    exit 1
+fi
 
 while [[ $exitpoolselect == "" ]]; do
      echo -e $green "What do you want to name your pool? " $nocolor
@@ -71,8 +75,17 @@ while [[ $exitfilesystemselect == "" ]]; do
     done
 done
 
-zpool create -f $options $pool $layout
-zfs create -V 10G $pool/ubuntu-temp
+if (zpool create -f $options $pool $layout); then;
+else
+    echo "Failed to create zpool"
+    exit 1
+fi
+
+if (zfs create -V 10G $pool/ubuntu-temp); then;
+else
+     echo "Filed to create ZVOL"
+     exit 1
+fi
 
 echo ""
 echo "Configuring the Ubiquity Installer"
@@ -87,7 +100,11 @@ echo -e ' \t' "This install script will continue."
 echo ""
 read -p "Press any key to launch Ubiquity. These instructions will remain visible in the terminal window."
 
-ubiquity --no-bootloader
+if (ubiquity --no-bootloader); then;
+else
+     echo "Ubiquity Installer failed to complete.  Terminating Script."
+     exit 1
+fi
 
 zfs create $pool/ROOT
 zfs create $pool/ROOT/ubuntu-1
