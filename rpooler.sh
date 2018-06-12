@@ -16,8 +16,7 @@ if [[ $EUID -ne 0 ]]; then
      exit 1
 fi
 
-if (apt install -y zfsutils &> /dev/null); then;
-else
+if !(apt install -y zfsutils &> /dev/null); then
     echo "Failed to install zfsutils from the internet.  Please check your connection."
     exit 1
 fi
@@ -75,14 +74,12 @@ while [[ $exitfilesystemselect == "" ]]; do
     done
 done
 
-if (zpool create -f $options $pool $layout); then;
-else
+if !(zpool create -f $options $pool $layout); then
     echo "Failed to create zpool"
     exit 1
 fi
 
-if (zfs create -V 10G $pool/ubuntu-temp); then;
-else
+if !(zfs create -V 10G $pool/ubuntu-temp); then
      echo "Filed to create ZVOL"
      exit 1
 fi
@@ -100,8 +97,7 @@ echo -e ' \t' "This install script will continue."
 echo ""
 read -p "Press any key to launch Ubiquity. These instructions will remain visible in the terminal window."
 
-if (ubiquity --no-bootloader); then;
-else
+if !(ubiquity --no-bootloader); then
      echo "Ubiquity Installer failed to complete.  Terminating Script."
      exit 1
 fi
