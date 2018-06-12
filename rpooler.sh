@@ -17,7 +17,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 if !(apt install -y zfsutils &> /dev/null); then
-    echo "Failed to install zfsutils from the internet.  Please check your connection."
+    echo "Error installing zfsutils from the internet.  Please check your connection."
     exit 1
 fi
 
@@ -75,12 +75,12 @@ while [[ $exitfilesystemselect == "" ]]; do
 done
 
 if !(zpool create -f $options $pool $layout); then
-    echo "Failed to create zpool"
+    echo "Error creating zpool.  Terminating Script."
     exit 1
 fi
 
 if !(zfs create -V 10G $pool/ubuntu-temp); then
-     echo "Filed to create ZVOL"
+     echo "Error creating ZVOL.  Terminating Script."
      exit 1
 fi
 
@@ -104,7 +104,11 @@ fi
 
 zfs create $pool/ROOT
 zfs create $pool/ROOT/ubuntu-1
-rsync -avPX /target/. /$pool/ROOT/ubuntu-1/.
+
+if !(rsync -avPX /target/. /$pool/ROOT/ubuntu-1/.); then
+     echo "Rsync failed to complete. Terminating Script."
+     exit 1
+fi
 
 for d in proc sys dev; do mount --bind /$d /$pool/ROOT/ubuntu-1/$d; done
 
