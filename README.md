@@ -1,6 +1,6 @@
 # Rpooler
 ## A ZFS rpool wrapper for the Ubuntu 18.04 Ubiquity Installer
-This is a wrapper that automates the creation of a fully bootable zfs rpool with Ubuntu 18.04 installed.  It was crafted off the setep-by-step [HOWTO install Ubuntu 18.04 to a Whole Disk Native ZFS Root Filesystem using Ubiquity GUI installer](https://github.com/zfsonlinux/pkg-zfs/wiki/HOWTO-install-Ubuntu-18.04-to-a-Whole-Disk-Native-ZFS-Root-Filesystem-using-Ubiquity-GUI-installer).  The goals are to further simplfy the installation process and encourage best practices through the guided process.
+This is a wrapper that automates the creation of a fully bootable zfs rpool with Ubuntu 18.04 installed.  It was crafted off the step-by-step [HOWTO install Ubuntu 18.04 to a Whole Disk Native ZFS Root Filesystem using Ubiquity GUI installer](https://github.com/zfsonlinux/pkg-zfs/wiki/HOWTO-install-Ubuntu-18.04-to-a-Whole-Disk-Native-ZFS-Root-Filesystem-using-Ubiquity-GUI-installer).  The goals are to further simplfy the installation process and encourage best practices through the guided process.
 
 Instructions:
 1) Boot Ubuntu 18.04 Desktop Live CD
