@@ -16,7 +16,10 @@ if [[ $EUID -ne 0 ]]; then
      exit 1
 fi
 
-apt install -y zfsutils &> /dev/null
+if !(apt install -y zfsutils &> /dev/null); then
+    echo "Error installing zfsutils from the internet.  Please check your connection."
+    exit 1
+fi
 
 while [[ $exitpoolselect == "" ]]; do
      echo -e $green "What do you want to name your pool? " $nocolor
@@ -71,8 +74,15 @@ while [[ $exitfilesystemselect == "" ]]; do
     done
 done
 
-zpool create -f $options $pool $layout
-zfs create -V 10G $pool/ubuntu-temp
+if !(zpool create -f $options $pool $layout); then
+    echo "Error creating zpool.  Terminating Script."
+    exit 1
+fi
+
+if !(zfs create -V 10G $pool/ubuntu-temp); then
+     echo "Error creating ZVOL.  Terminating Script."
+     exit 1
+fi
 
 echo ""
 echo "Configuring the Ubiquity Installer"
@@ -87,11 +97,18 @@ echo -e ' \t' "This install script will continue."
 echo ""
 read -p "Press any key to launch Ubiquity. These instructions will remain visible in the terminal window."
 
-ubiquity --no-bootloader
+if !(ubiquity --no-bootloader); then
+     echo "Ubiquity Installer failed to complete.  Terminating Script."
+     exit 1
+fi
 
 zfs create $pool/ROOT
 zfs create $pool/ROOT/ubuntu-1
-rsync -avPX /target/. /$pool/ROOT/ubuntu-1/.
+
+if !(rsync -avPX /target/. /$pool/ROOT/ubuntu-1/.); then
+     echo "Rsync failed to complete. Terminating Script."
+     exit 1
+fi
 
 for d in proc sys dev; do mount --bind /$d /$pool/ROOT/ubuntu-1/$d; done
 
