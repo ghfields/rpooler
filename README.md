@@ -6,7 +6,7 @@ Instructions:
 1) Boot Ubuntu 18.04 Desktop Live CD
 2) Select "Try Ubuntu"
 3) Open terminal (Ctrl+Alt+t)
-4) wget https://raw.githubusercontent.com/ghfields/rpooler/master/rpooler.sh
+4) wget https://raw.github.com/ghfields/rpooler/master/rpooler.sh
 5) chmod +x rpooler.sh
 6) sudo su
 7) ./rpooler.sh
