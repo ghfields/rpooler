@@ -31,7 +31,7 @@ while [[ $exitpoolselect == "" ]]; do
      read -e layout
      echo ""
      echo -e $green "Which zpool & zfs options do you wish to set at creation? " $nocolor
-     read -i "-o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
+     read -i "-o feature@multi_vdev_crash_dump=disabled -o feature@large_dnode=disabled -o feature@sha512=disabled -o feature@skein=disabled -o feature@edonr=disabled -o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa" -e options
      echo ""
      echo -n "Zpool "
      if (zpool create -nf $options $pool $layout); then 
