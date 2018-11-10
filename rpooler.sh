@@ -105,7 +105,7 @@ fi
 zfs create $pool/ROOT
 zfs create $pool/ROOT/ubuntu-1
 
-if !(rsync -avPX /target/. /$pool/ROOT/ubuntu-1/.); then
+if !(rsync -avPX --exclude '/swapfile' /target/. /$pool/ROOT/ubuntu-1/.); then
      echo "Rsync failed to complete. Terminating Script."
      exit 1
 fi
@@ -130,8 +130,10 @@ chroot /$pool/ROOT/ubuntu-1 apt update
 chroot /$pool/ROOT/ubuntu-1 apt install -y zfs-initramfs
 chroot /$pool/ROOT/ubuntu-1 update-grub
 drives="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
-for i in $drives; do chroot /$pool/ROOT/ubuntu-1 sgdisk -a1 -n2:512:2047 -t2:EF02 $i;chroot /$pool/ROOT/ubuntu-1 grub-install $i;done
-rm /$pool/ROOT/ubuntu-1/swapfile
+for i in $drives; do 
+          chroot /$pool/ROOT/ubuntu-1 sgdisk -a1 -n2:512:2047 -t2:EF02 $i
+          chroot /$pool/ROOT/ubuntu-1 grub-install $i
+     done
 
 umount -R /$pool/ROOT/ubuntu-1
 zfs set mountpoint=/ $pool/ROOT/ubuntu-1
