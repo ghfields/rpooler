@@ -102,19 +102,35 @@ if !(ubiquity --no-bootloader); then
      exit 1
 fi
 
-zfs create $pool/ROOT
-zfs create $pool/ROOT/ubuntu-1
+while [[ $exitrootselect == "" ]]; do
+     echo -e $green "Where on your pool do you want your root dataset? " $nocolor
+     echo -e "$pool\c"
+     read -i "/ROOT/ubuntu-1" -e root
+     echo ""
+     while true; do
+               echo -e $green "Create root dataset at $pool$root." $nocolor
+               echo -e $green "Is this correct (y/n):" $nocolor
+               read -i "y" -e yn
+               case $yn in
+                    [Yy]* ) exitrootselect="1"; break;;
+                    [Nn]* ) break;;
+                    * ) echo "Please answer yes or no.";;
+               esac
+          done
+done
 
-if !(rsync -avPX --exclude '/swapfile' /target/. /$pool/ROOT/ubuntu-1/.); then
+zfs create -p $pool$root
+
+if !(rsync -avPX --exclude '/swapfile' /target/. /$pool$root/.); then
      echo "Rsync failed to complete. Terminating Script."
      exit 1
 fi
 
-for d in proc sys dev; do mount --bind /$d /$pool/ROOT/ubuntu-1/$d; done
+for d in proc sys dev; do mount --bind /$d /$pool$root/$d; done
 
-cp /etc/resolv.conf /$pool/ROOT/ubuntu-1/etc/resolv.conf
-sed -e '/\s\/\s/ s/^#*/#/' -i /$pool/ROOT/ubuntu-1/etc/fstab  #My take at comment out / line.
-sed -e '/\sswap\s/ s/^#*/#/' -i /$pool/ROOT/ubuntu-1/etc/fstab #My take at comment out swap line.
+cp /etc/resolv.conf /$pool$root/etc/resolv.conf
+sed -e '/\s\/\s/ s/^#*/#/' -i /$pool$root/etc/fstab  #My take at comment out / line.
+sed -e '/\sswap\s/ s/^#*/#/' -i /$pool$root/etc/fstab #My take at comment out swap line.
 
 if [[ $swapzvol -ne 0 ]]; then
      zfs create -V "$swapzvol"G -b $(getconf PAGESIZE) -o compression=zle \
@@ -122,27 +138,27 @@ if [[ $swapzvol -ne 0 ]]; then
       -o primarycache=metadata -o secondarycache=none \
       -o com.sun:auto-snapshot=false $pool/swap
      mkswap -f /dev/zvol/$pool/swap
-     echo RESUME=none > /$pool/ROOT/ubuntu-1/etc/initramfs-tools/conf.d/resume
-     echo /dev/zvol/$pool/swap none swap defaults 0 0 >> /$pool/ROOT/ubuntu-1/etc/fstab
+     echo RESUME=none > /$pool$root/etc/initramfs-tools/conf.d/resume
+     echo /dev/zvol/$pool/swap none swap defaults 0 0 >> /$pool$root/etc/fstab
 fi
 
-chroot /$pool/ROOT/ubuntu-1 apt update
-chroot /$pool/ROOT/ubuntu-1 apt install -y zfs-initramfs
-chroot /$pool/ROOT/ubuntu-1 update-grub
+chroot /$pool$root apt update
+chroot /$pool$root apt install -y zfs-initramfs
+chroot /$pool$root update-grub
 drives="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
 for i in $drives; do 
-          chroot /$pool/ROOT/ubuntu-1 sgdisk -a1 -n2:512:2047 -t2:EF02 $i
-          chroot /$pool/ROOT/ubuntu-1 grub-install $i
+          chroot /$pool$root sgdisk -a1 -n2:512:2047 -t2:EF02 $i
+          chroot /$pool$root grub-install $i
      done
 
-umount -R /$pool/ROOT/ubuntu-1
-zfs set mountpoint=/ $pool/ROOT/ubuntu-1
+umount -R /$pool$root
+zfs set mountpoint=/ $pool$root
 
 while true; do
     echo -e $green 'Would you like to create a snapshot before rebooting? : ' $nocolor
     read -i "y" -e yn
     case $yn in
-        [Yy]* ) zfs snapshot $pool/ROOT/ubuntu-1@install-pre-reboot; break;;
+        [Yy]* ) zfs snapshot $pool$root@install-pre-reboot; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
