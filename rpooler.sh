@@ -16,7 +16,7 @@ if [[ $EUID -ne 0 ]]; then
      exit 1
 fi
 
-if !(apt install -y zfsutils &> /dev/null); then
+if !(apt update &> /dev/null && apt install -y zfsutils &> /dev/null); then
     echo "Error installing zfsutils from the internet.  Please check your connection."
     exit 1
 fi
