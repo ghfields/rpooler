@@ -1,21 +1,17 @@
 # Rpooler
 ## A ZFS rpool wrapper for the Ubuntu 18.04 Ubiquity Installer
-This is a wrapper that automates the creation of a fully bootable zfs rpool with Ubuntu 18.04 installed.  It was crafted off the step-by-step [HOWTO install Ubuntu 18.04 to a Whole Disk Native ZFS Root Filesystem using Ubiquity GUI installer](https://github.com/zfsonlinux/pkg-zfs/wiki/HOWTO-install-Ubuntu-18.04-to-a-Whole-Disk-Native-ZFS-Root-Filesystem-using-Ubiquity-GUI-installer).  The goals are to further simplfy the installation process and encourage best practices through the guided process.
+This is a wrapper that automates the creation of a fully bootable zfs root pool with Ubuntu 18.04 installed.  It was crafted off the step-by-step [HOWTO install Ubuntu 18.04 to a Whole Disk Native ZFS Root Filesystem using Ubiquity GUI installer](https://github.com/zfsonlinux/pkg-zfs/wiki/HOWTO-install-Ubuntu-18.04-to-a-Whole-Disk-Native-ZFS-Root-Filesystem-using-Ubiquity-GUI-installer).  The goals are to further simplfy the installation process and encourage best practices through the guided process.
 
 Instructions:
 1) Boot Ubuntu 18.04 Desktop Live CD
 2) Select "Try Ubuntu"
 3) Open terminal (Ctrl+Alt+t)
-4) wget https://raw.github.com/ghfields/rpooler/master/rpooler.sh
-5) chmod +x rpooler.sh
-6) sudo su
-7) ./rpooler.sh
+4) `wget https://raw.github.com/ghfields/rpooler/master/rpooler.sh`
+5) `sudo bash rpooler.sh
 
 
 ## What to expect when running script
 ```
-root@ubuntu:/home/ubuntu# ./rpooler.sh 
-
 Installer script for ZFS whole disk installation using Ubuntu GUI (Ubiquity)
 ----------------------------------------------------------------------------
  What do you want to name your pool?  
@@ -90,5 +86,4 @@ If first boot hangs, reset computer and try boot again.
 
  Do you want to restart now?  
 n
-root@ubuntu:/home/ubuntu# 
 ```
