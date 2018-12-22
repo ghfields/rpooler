@@ -7,7 +7,7 @@ Instructions:
 2) Select "Try Ubuntu"
 3) Open terminal (Ctrl+Alt+t)
 4) `wget https://raw.github.com/ghfields/rpooler/master/rpooler.sh`
-5) `sudo bash rpooler.sh
+5) `sudo bash rpooler.sh`
 
 
 ## What to expect when running script
