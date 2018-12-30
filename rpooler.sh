@@ -175,7 +175,7 @@ echo ""
 
 while true; do
     echo -e $green 'Do you want to restart now? ' $nocolor
-    read -e yn
+    read -i "y" -e yn
     case $yn in
         [Yy]* ) shutdown -r 0; break;;
         [Nn]* ) break;;
