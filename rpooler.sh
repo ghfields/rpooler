@@ -139,6 +139,20 @@ zfs_create()
     fi
 }
 
+zfs_create_snapshot()
+{
+    while true; do
+        read -p "Would you like to create a snapshot before rebooting ?" -i "y" -e yn
+        case $yn in
+            [Yy]* )
+                _exec "zfs snapshot $pool$root@install-pre-reboot"
+                break;;
+            [Nn]* ) break;;
+            * ) echo "Please answer yes or no.";;
+        esac
+    done
+}
+
 os_install()
 {   # initial ubuntu-ubiquity installer.
     case "$1" in
@@ -182,20 +196,6 @@ os_install()
             echo "TODO"
         ;;
     esac
-}
-
-zfs_create_snapshot()
-{
-    while true; do
-        read -p "Would you like to create a snapshot before rebooting ?" -i "y" -e yn
-        case $yn in
-            [Yy]* )
-                _exec "zfs snapshot $pool$root@install-pre-reboot"
-                break;;
-            [Nn]* ) break;;
-            * ) echo "Please answer yes or no.";;
-        esac
-    done
 }
 
 cleanup()
