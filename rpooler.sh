@@ -205,7 +205,6 @@ os_install()
 cleanup()
 {   # final system cleanups
     _exec "swapoff -a"
-    _exec "umount -R /$pool$root"
     _exec "umount /target"
     _exec "zfs destroy $pool/ubuntu-temp"
     _exec "zpool export $pool"
