@@ -37,7 +37,6 @@ _exec()
     _CMD="$1"
     _MSG_ERROR="$2"
     read -e -p "$ " -i "$_CMD"
-    if [[ "$REPLY" != '' ]]; then
         sh -c "$_CMD"
         if [ "$?" -eq 0 ];then
             echo "$_CMD" >> "$LOG_CMD"
@@ -46,7 +45,6 @@ _exec()
             echo "$_MSG_ERROR"
             return 1
         fi
-    fi
 }
 
 zfs_setup() 
