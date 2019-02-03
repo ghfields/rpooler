@@ -136,8 +136,6 @@ zfs_create()
             -o primarycache=metadata -o secondarycache=none \
             -o com.sun:auto-snapshot=false $pool/swap"
         _exec "mkswap -f /dev/zvol/$pool/swap"
-        _exec "echo RESUME=none > /$pool$root/etc/initramfs-tools/conf.d/resume"
-        _exec "echo /dev/zvol/$pool/swap none swap defaults 0 0 >> /$pool$root/etc/fstab"
     fi
 }
 
@@ -233,6 +231,9 @@ sys_config()
         _exec "chroot /$pool$root grub-install $i"
     done
     
+
+    _exec "echo RESUME=none > /$pool$root/etc/initramfs-tools/conf.d/resume"
+    _exec "echo /dev/zvol/$pool/swap none swap defaults 0 0 >> /$pool$root/etc/fstab"
     _exec "zfs set mountpoint=/ $pool$root"
 }
 
