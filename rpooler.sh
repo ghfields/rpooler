@@ -214,6 +214,8 @@ cleanup()
 {   # final system cleanups
     _exec "swapoff -a"
     _exec "umount /target"
+
+    mount | grep -v zfs | tac | awk '/\/rpool/ {print $3}' | xargs -i{} umount -lf {}
     _exec "zfs destroy $pool/ubuntu-temp"
     _exec "zpool export $pool"
 }
