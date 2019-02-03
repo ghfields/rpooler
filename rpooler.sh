@@ -37,7 +37,7 @@ _exec()
     _CMD="$1"
     _MSG_ERROR="$2"
     read -e -p "$ " -i "$_CMD"
-    if [[ "$REPLY" == 'y' ]]; then
+    if [[ "$REPLY" != '' ]]; then
         sh -c "$_CMD"
         if [ "$?" -eq 0 ];then
             echo "$_CMD" >> "$LOG_CMD"
