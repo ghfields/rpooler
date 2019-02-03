@@ -137,6 +137,7 @@ zfs_create()
             -o com.sun:auto-snapshot=false $pool/swap"
         _exec "mkswap -f /dev/zvol/$pool/swap"
     fi
+    _exec "zfs create -p $pool$root"
 }
 
 zfs_create_snapshot()
