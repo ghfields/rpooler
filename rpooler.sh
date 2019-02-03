@@ -5,6 +5,9 @@ set -e
 
 LOG='rpooler.log'
 LOG_CMD='rpooler.cmd'
+DRY_RUN=0
+DEBUG=0
+
 
 echo -e "\nInstaller script for ZFS whole disk installation using various installers"
 echo "----------------------------------------------------------------------------" 
@@ -36,7 +39,13 @@ _exec()
     # i have this in all my system scripts with options for time counters etc.
     _CMD="$1"
     _MSG_ERROR="$2"
-    read -e -p "$ " -i "$_CMD"
+    if [ "$DRY_RUN" -eq 1 ]; then
+        echo "$_CMD"
+        return
+    else
+        if [ "$DEBUG" -eq 1]; then
+            read -e -p "$ " -i "$_CMD"
+        fi
         sh -c "$_CMD"
         if [ "$?" -eq 0 ];then
             echo "$_CMD" >> "$LOG_CMD"
@@ -45,6 +54,7 @@ _exec()
             echo "$_MSG_ERROR"
             return 1
         fi
+    fi
 }
 
 zfs_setup() 
