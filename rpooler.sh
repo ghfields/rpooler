@@ -169,6 +169,9 @@ os_install()
             # have made a stand legally. I get the difference in partition to standard
             # mkfs but these patches should really be in ubiquity !
 
+            # Just found ubiquity --automatic with preseed too, AWESOME.
+            # There are many preseed options to consider seperate branch to test out.
+
             # For now following your work-flow at least maintains the codes design.
             echo ""
             echo "Configuring the Ubiquity Installer"
