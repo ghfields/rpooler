@@ -53,9 +53,8 @@ zfs_setup()
 {   # basic wrapper for installing zfs kernel modules on host os
     case $BASE_OS in
         ubuntu)
-            _exec 'apt update'
-            _exec 'apt install -y zfsutils' \
-                'Error installing zfsutils from the internet.  Please check your connection.'
+            _exec "apt update"
+            _exec "apt install -y zfsutils"
         ;;
     esac
 }
@@ -100,6 +99,23 @@ zfs_config()
             esac
         done
     done
+
+    # root dataset
+    while [[ $exitrootselect == "" ]]; do
+        echo -e "$pool\c"
+        read -p "Where on your pool do you want your root dataset ?" -i "/ROOT/ubuntu-1" -e root
+        while true; do
+           echo -e $green "Create root dataset at $pool$root." $nocolor
+           echo -e $green "Is this correct (y/n):" $nocolor
+           read -i "y" -e yn
+           case $yn in
+                [Yy]* ) exitrootselect="1"; break;;
+                [Nn]* ) break;;
+                * ) echo "Please answer yes or no.";;
+           esac
+        done
+    done
+
     export root="$root"
     export pool="$pool"
     export options="$options"
@@ -125,13 +141,6 @@ zfs_create()
     fi
 }
 
-zfs_bind_local()
-{   # bind local /proc with chroot
-    for d in proc sys dev; do
-        _exec "mount --bind /$d /$pool$root/$d"
-    done
-}
-
 os_install()
 {   # initial ubuntu-ubiquity installer.
     case "$1" in
@@ -143,7 +152,9 @@ os_install()
             # user having to 
             
             # Ultimately incorporating the zfs_setup question into the installer would
-            # be ideal, we should check with ubuntu if they have plans !
+            # be ideal, we should check with ubuntu if they have plans ! They seem to
+            # have made a stand legally. I get the difference in partition to standard
+            # mkfs but these patches should really be in ubiquity !
 
             # For now following your work-flow at least maintains the codes design.
             echo ""
@@ -161,33 +172,13 @@ os_install()
 
             _exec 'ubiquity --no-bootloader' 'Ubiquity Installer failed to complete.'
 
-            while [[ $exitrootselect == "" ]]; do
-                echo -e "$pool\c"
-                read -p "Where on your pool do you want your root dataset ?" -i "/ROOT/ubuntu-1" -e root
-                while true; do
-                   echo -e $green "Create root dataset at $pool$root." $nocolor
-                   echo -e $green "Is this correct (y/n):" $nocolor
-                   read -i "y" -e yn
-                   case $yn in
-                        [Yy]* ) exitrootselect="1"; break;;
-                        [Nn]* ) break;;
-                        * ) echo "Please answer yes or no.";;
-                   esac
-                done
-            done
-
-            zfs_create
-
             # If my understanding is correct this essentially just slurps up the "default" ubiquity install
             # and puts it on the zvol ?
 
-            # 1) Is their anyway to either tell ubiquity to use /$pool$root
+            # 1) Is their anyway to tell ubiquity to use /$pool$root
             # 2) If not couldn't we just bind /target with /$pool$root first and skip the rsync ??
 
             _exec "rsync -avPX --exclude '/swapfile' /target/. /$pool$root/." 'Rsync failed to complete'
-
-            zfs_bind_local
-            sys_config
         ;;
         gentoo)
             echo "TODO"
@@ -221,6 +212,11 @@ cleanup()
 sys_config()
 {   # Generic system configuration
 
+    # bind local /proc with chroot
+    for d in proc sys dev; do
+        _exec "mount --bind /$d /$pool$root/$d"
+    done
+
     # network config
     _exec "cp /etc/resolv.conf /$pool$root/etc/resolv.conf"
     _exec "sed -e '/\s\/\s/ s/^#*/#/' -i /$pool$root/etc/fstab"  #My take at comment out / line.
@@ -240,7 +236,8 @@ sys_config()
     _exec "zfs set mountpoint=/ $pool$root"
 }
 
-_reboot() {
+_reboot()
+{
     while true; do
         echo -e $green 'Do you want to restart now? ' $nocolor
         read -i "y" -e yn
@@ -258,8 +255,9 @@ _reboot() {
 
 zfs_setup
 zfs_config
-sys_config
+zfs_create
 os_install ubuntu-ubiquity
+sys_config
 zfs_create_snapshot
 cleanup
 _reboot
