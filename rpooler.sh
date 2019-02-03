@@ -36,7 +36,7 @@ _exec()
     # i have this in all my system scripts with options for time counters etc.
     _CMD="$1"
     _MSG_ERROR="$2"
-    read -p "EXEC=" -i "$_CMD"
+    read -e -p "$ " -i "$_CMD"
     if [[ "$REPLY" == 'y' ]]; then
         sh -c "$_CMD"
         if [ "$?" -eq 0 ];then
