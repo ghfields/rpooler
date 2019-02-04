@@ -4,6 +4,9 @@ zfs-install automates the creation of a fully bootable zfs root pool.
 
 Original forked from rpooler with all work "upstreamed", thanks Garrett !
 
+## Roadmap
+Please see wiki for general state of the project
+
 ## zfsonlinux community documentation for specific distributions.
 
 ubuntu-ubiquity [HOWTO install Ubuntu 18.04 to a Whole Disk Native ZFS Root Filesystem using Ubiquity GUI installer](https://github.com/zfsonlinux/pkg-zfs/wiki/HOWTO-install-Ubuntu-18.04-to-a-Whole-Disk-Native-ZFS-Root-Filesystem-using-Ubiquity-GUI-installer).

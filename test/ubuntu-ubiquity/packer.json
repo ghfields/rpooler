@@ -1,0 +1,33 @@
+{
+    "builders": [{
+        "vm_name": "ubuntu-bionic-live",
+        "type": "virtualbox-iso",
+        "guest_os_type": "Ubuntu_64",
+        "iso_url": "ubuntu-18.04.1-desktop-amd64.iso",
+        "iso_checksum": "f430da8fa59d2f5f4262518e3c177246",
+        "iso_checksum_type": "md5",
+        "boot_command": [
+            "{{ user `boot_command_prefix` }}",
+            "/install/vmlinuz noapic ",
+            "initrd=/install/initrd.gz ",
+            "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `preseed`}} ",
+            "debian-installer=en_US auto locale=en_US kbd-chooser/method=us ",
+            "hostname={{ user `hostname` }} ",
+            "grub-installer/bootdev=/dev/sda<wait> ",
+            "fb=false debconf/frontend=noninteractive ",
+            "keyboard-configuration/modelcode=SKIP keyboard-configuration/layout=USA ",
+            "keyboard-configuration/variant=USA console-setup/ask_detect=false ",
+            "passwd/user-fullname={{ user `ssh_fullname` }} ",
+            "passwd/user-password={{ user `ssh_password` }} ",
+            "passwd/user-password-again={{ user `ssh_password` }} ",
+            "passwd/username={{ user `ssh_username` }} ",
+            "-- <enter>"
+        ],
+        "ssh_username": "ubuntu",
+        "shutdown_command": "echo 'packer' | sudo -S shutdown -P now"
+    }],
+    "provisioners": [
+    ],
+    "post-processors": [
+    ]
+}
