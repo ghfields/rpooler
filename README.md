@@ -5,6 +5,8 @@ zfs-install automates the creation of a fully bootable zfs root pool.
 Original forked from rpooler with all work "upstreamed", thanks Garrett !
 
 ## Roadmap
+This project is in developement and unstable, please use rpooler in meantime.
+
 Please see wiki for general state of the project
 
 ## zfsonlinux community documentation for specific distributions.
