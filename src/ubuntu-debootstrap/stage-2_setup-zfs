@@ -1,0 +1,41 @@
+#!/bin/sh
+
+set -x
+set -e
+
+# Format disk
+#ls /dev/disk/by-id/
+
+export DISK_ID=ata-HGST_HTS721010A9E630_JR1000BN2PDN3E
+export ZPOOL_NAME=nomad
+
+sgdisk --zap-all "/dev/disk/by-id/${DISK_ID}"
+
+# Run this if you need legacy (BIOS) booting:
+#sgdisk -a1 -n2:34:2047  -t2:EF02 /dev/disk/by-id/scsi-SATA_disk1
+
+#Run this for UEFI booting (for use now or in the future):
+sgdisk     -n3:1M:+512M -t3:EF00 "/dev/disk/by-id/$DISK_ID"
+sgdisk     -n1:0:0      -t1:BF01 "/dev/disk/by-id/$DISK_ID"
+
+zpool create -f -o ashift=12 -O atime=off -O canmount=off -O compression=lz4 -O normalization=formD -O xattr=sa -O mountpoint=/ -R /mnt nomad /dev/disk/by-id/ata-HGST_HTS721010A9E630_JR1000BN2PDN3E-part1
+
+zfs create -o canmount=off -o mountpoint=none $ZPOOL_NAME/ROOT
+
+zfs create -o canmount=noauto -o mountpoint=/ $ZPOOL_NAME/ROOT/ubuntu
+zfs mount $ZPOOL_NAME/ROOT/ubuntu
+
+zfs create                 -o setuid=off              $ZPOOL_NAME/home
+zfs create -o mountpoint=/root                        $ZPOOL_NAME/home/root
+zfs create -o canmount=off -o setuid=off  -o exec=off $ZPOOL_NAME/var
+zfs create -o com.sun:auto-snapshot=false             $ZPOOL_NAME/var/cache
+zfs create -o acltype=posixacl -o xattr=sa            $ZPOOL_NAME/var/log
+zfs create                                            $ZPOOL_NAME/var/spool
+zfs create -o com.sun:auto-snapshot=false -o exec=on  $ZPOOL_NAME/var/tmp
+
+zfs create -o com.sun:auto-snapshot=false \
+             -o mountpoint=/var/lib/docker              $ZPOOL_NAME/var/docker
+
+zfs create -o com.sun:auto-snapshot=false \
+             -o setuid=off                              $ZPOOL_NAME/tmp
+chmod 1777 /mnt/tmp

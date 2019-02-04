@@ -1,0 +1,62 @@
+#!/bin/sh
+
+# Chroot into system and configure basic system
+
+#chroot /mnt /bin/bash --login
+
+DISK_ID=ata-HGST_HTS721010A9E630_JR1000BN2PDN3E
+ZPOOL_NAME=nomad
+
+ln -s /proc/self/mounts /etc/mtab
+apt update
+
+dpkg-reconfigure locales LANG=en_US.UTF-8
+
+# echo "America/Eastern" | sudo tee /etc/timezone
+#sudo dpkg-reconfigure --frontend noninteractive tzdata
+
+dpkg-reconfigure tzdata
+apt install --yes --no-install-recommends linux-image-generic
+apt install --yes zfs-initramfs
+
+# Install Grub
+apt install dosfstools
+mkdosfs -F 32 -n EFI "/dev/disk/by-id/${DISK_ID}-part3"
+mkdir /boot/efi
+echo PARTUUID=$(blkid -s PARTUUID -o value \
+      /dev/disk/by-id/${DISK_ID}-part3) \
+      /boot/efi vfat noatime,nofail,x-systemd.device-timeout=1 0 1 >> /etc/fstab
+mount /boot/efi
+apt install --yes grub-efi-amd64
+
+# Setup system groups
+addgroup --system lpadmin
+addgroup --system sambashare
+passwd
+
+# Fix mount ordering
+zfs set mountpoint=legacy $ZPOOL_NAME/var/log
+zfs set mountpoint=legacy $ZPOOL_NAME/var/tmp
+cat << EOF >> /etc/fstab 
+$ZPOOL_NAME/var/log /var/log zfs noatime,nodev,noexec,nosuid 0 0
+$ZPOOL_NAME/var/tmp /var/tmp zfs noatime,nodev,nosuid 0 0
+EOF
+
+zfs set mountpoint=legacy $ZPOOL_NAME/tmp
+cat << EOF >> /etc/fstab 
+$ZPOOL_NAME/tmp /tmp zfs noatime,nodev,nosuid 0 0
+EOF
+
+grub-probe /
+#test for zfs
+
+update-initramfs -u -k all
+update-grub
+
+grub-install --target=x86_64-efi --efi-directory=/boot/efi \
+      --bootloader-id=ubuntu --recheck --no-floppy
+
+ls /boot/grub/*/zfs.mod
+#check zfs module
+
+zfs snapshot $ZPOOL_NAME/ROOT/ubuntu@install

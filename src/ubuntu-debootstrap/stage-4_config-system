@@ -1,0 +1,41 @@
+read -p "HOSTNAME=" HOSTNAME
+
+echo "$HOSTNAME" > /mnt/etc/hostname
+
+cat << EOF >> "/mnt/etc/hosts"
+127.0.0.1	$HOSTNAME
+EOF
+
+#ip addr show
+
+#read -p "NET_NAME=" NET_NAME
+
+#cat <<EOF > "/mnt/etc/netplan/$NET_NAME.yml"
+#network:
+#  version: 2
+#  ethernets:
+#    $NET_NAME:
+#      dhcp4: true
+#EOF
+
+cat << EOF > "/mnt/etc/netplan/01-netcfg.yaml"
+network:
+  version: 2
+  renderer: NetworkManager
+EOF
+
+cat <<EOF > /mnt/etc/apt/sources.list
+deb http://archive.ubuntu.com/ubuntu bionic main universe
+deb-src http://archive.ubuntu.com/ubuntu bionic main universe
+
+deb http://security.ubuntu.com/ubuntu bionic-security main universe
+deb-src http://security.ubuntu.com/ubuntu bionic-security main universe
+
+deb http://archive.ubuntu.com/ubuntu bionic-updates main universe
+deb-src http://archive.ubuntu.com/ubuntu bionic-updates main universe
+EOF
+
+cat /mnt/etc/netplan/$NET_NAME.yml
+cat /mnt/etc/apt/sources.list
+
+

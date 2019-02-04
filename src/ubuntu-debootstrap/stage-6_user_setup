@@ -1,0 +1,10 @@
+ZPOOL_NAME=nomad
+USER_NAME=i
+
+zfs create $ZPOOL_NAME/home/$USER_NAME
+adduser $USER_NAME
+cp -a /etc/skel/.[!.]* /home/$USER_NAME
+chown -R $USER_NAME:$USER_NAME /home/$USER_NAME
+
+usermod -a -G adm,cdrom,dip,lpadmin,plugdev,sambashare,sudo $USER_NAME
+

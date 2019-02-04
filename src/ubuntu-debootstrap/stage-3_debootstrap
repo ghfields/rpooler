@@ -1,0 +1,3 @@
+chmod 1777 /mnt/var/tmp
+debootstrap bionic /mnt
+zfs set devices=off $ZPOOL_NAME

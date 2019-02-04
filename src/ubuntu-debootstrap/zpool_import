@@ -1,0 +1,4 @@
+zpool export -a
+zpool import -N -R /mnt nomad
+zfs mount nomad/ROOT/ubuntu
+zfs mount -a
