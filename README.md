@@ -27,12 +27,11 @@ TODO
 1) Boot supported distribtion
 2) run zfs-install.sh
 3) follow normal install process
-3a) need to confirm zfs disk!
+4) need to confirm zfs disk!
 
 ## Contributions
 Any and all contibutions in any form are encouraged and most welcome.
 
-## HELP
 There doesn't appear to be many people interested in this project, thats cool!
 I would appreciate the time of any other zfs interested users. What method do you
 use to "bootstrap" zfs for your use case.
