@@ -1,89 +1,54 @@
-# Rpooler
-## A ZFS rpool wrapper for the Ubuntu 18.04 Ubiquity Installer
-This is a wrapper that automates the creation of a fully bootable zfs root pool with Ubuntu 18.04 installed.  It was crafted off the step-by-step [HOWTO install Ubuntu 18.04 to a Whole Disk Native ZFS Root Filesystem using Ubiquity GUI installer](https://github.com/zfsonlinux/pkg-zfs/wiki/HOWTO-install-Ubuntu-18.04-to-a-Whole-Disk-Native-ZFS-Root-Filesystem-using-Ubiquity-GUI-installer).  The goals are to further simplfy the installation process and encourage best practices through the guided process.
+# zfs-install
 
-Instructions:
-1) Boot Ubuntu 18.04 Desktop Live CD
-2) Select "Try Ubuntu"
-3) Open terminal (Ctrl+Alt+t)
-4) `wget https://raw.github.com/ghfields/rpooler/master/rpooler.sh`
-5) `sudo bash rpooler.sh`
+A wrapper that automates the creation of a fully bootable zfs root pool.
 
+Original forked from rpooler with all work "upstreamed", thanks Garrett !
 
-## What to expect when running script
-```
-Installer script for ZFS whole disk installation using Ubuntu GUI (Ubiquity)
-----------------------------------------------------------------------------
- What do you want to name your pool?  
-rpool
+## zfsonlinux community documentation for specific distributions.
 
-These are the drives on your system:
- 	 /dev/disk/by-id/ata-VBOX_CD-ROM_VB2-01700376
- 	 /dev/disk/by-id/ata-VBOX_HARDDISK_VB9c4c6292-31c83b83
- What vdev layout do you want to use? (hint: tab completion works):  
-/dev/disk/by-id/ata-VBOX_HARDDISK_VB9c4c6292-31c83b83
+ubuntu-ubiquity [HOWTO install Ubuntu 18.04 to a Whole Disk Native ZFS Root Filesystem using Ubiquity GUI installer](https://github.com/zfsonlinux/pkg-zfs/wiki/HOWTO-install-Ubuntu-18.04-to-a-Whole-Disk-Native-ZFS-Root-Filesystem-using-Ubiquity-GUI-installer).  The goals are to further simplfy the installation process and encourage best practices through the guided process.
 
- Which zpool & zfs options do you wish to set at creation?  
--o feature@multi_vdev_crash_dump=disabled -o feature@large_dnode=disabled -o feature@sha512=disabled -o feature@skein=disabled -o feature@edonr=disabled -o ashift=12 -O atime=off -O compression=lz4 -O normalization=formD -O recordsize=1M -O xattr=sa
+## Supported distributions
 
-Zpool would create 'rpool' with the following layout:
+- ubuntu-ubiquity
 
-	rpool
-	  ata-VBOX_HARDDISK_VB9c4c6292-31c83b83
+TODO
+- ubuntu-debootstrap
+- arch
+- gentoo
+- debian
+- rhel
+- centos
+- opensuse
+- linuxfromscratch
+- 
 
- Does this look correct (y/n): 
-y
+## Instructions
+1) Boot supported distribtion
+2) run zfs-install.sh
+3) follow normal install process
+3a) need to confirm zfs disk!
 
-The Ubiquity made swapfile will not function and will be removed.
-Based on your system's 3.85 GB of RAM, Ubuntu suggests a swap of 2 GB.
- What size, in GB, should the created swap zvol be? (0 for none):  
-2
-Zvol swap size: 2 GB
- Is this correct (y/n): 
-y
+## Contributions
+Any and all contibutions in any form are encouraged and most welcome.
 
-Configuring the Ubiquity Installer
-----------------------------------
- 	 1) Choose any options you wish until you get to the 'Installation Type' screen.
- 	 2) Select 'Erase disk and install Ubuntu' and click 'Continue'.
- 	 3) Change the 'Select drive:' dropdown to '/dev/zd0 - 10.7 GB Unknown' and click 'Install Now'.
- 	 4) A popup summarizes your choices and asks 'Write the changes to disks?'. Click 'Continue'.
- 	 5) At this point continue through the installer normally.
- 	 6) Finally, a message comes up 'Installation Complete'. Click the 'Continue Testing'.
- 	 This install script will continue.
+## HELP
+There doesn't appear to be many people interested in this project, thats cool!
+I would appreciate the time of any other zfs interested users. What method do you
+use to "bootstrap" zfs for your use case.
 
-Press any key to launch Ubiquity. These instructions will remain visible in the terminal window.
+## Dear Larry Ellison
+Your company could be transformed over night into one of the most significant 
+open source contributors in history. People love google, facebook and twitter 
+even though they screw them every click. Everyone hates paying your bills and 
+use your products only until CTO's can replace you with open source. 
 
+Open sourcing your products isn't going to cost you a single customer.
+No customer paying your bills gives a damn about free software they pay for 
+enterprise turn key solutions and they always will.
 
-======
-Ubiquity Launches
-======
+Wanna take real market share from IBM, MICROSOFT, GOOGLE, AWS. Open source.
 
-(Rsync output truncated)
+It would be really cool if you let the linux community use zfs as a start :)
 
-Setting up zfs-initramfs (0.7.5-1ubuntu16.2) ...
-Processing triggers for libc-bin (2.27-3ubuntu1) ...
-Processing triggers for initramfs-tools (0.130ubuntu3.1) ...
-update-initramfs: Generating /boot/initrd.img-4.15.0-29-generic
-cp: memory exhausted
-Generating grub configuration file ...
-Found linux image: /boot/vmlinuz-4.15.0-29-generic
-Found initrd image: /boot/initrd.img-4.15.0-29-generic
-Found memtest86+ image: /ROOT/ubuntu-1@/boot/memtest86+.elf
-Found memtest86+ image: /ROOT/ubuntu-1@/boot/memtest86+.bin
-done
-Warning: The kernel is still using the old partition table.
-The new table will be used at the next reboot or after you
-run partprobe(8) or kpartx(8)
-The operation has completed successfully.
-Installing for i386-pc platform.
-Installation finished. No error reported.
- Would you like to create a snapshot before rebooting? :  
-y
-
-Script complete.  Please reboot your computer to boot into your installation.
-If first boot hangs, reset computer and try boot again.
-
- Do you want to restart now?  
-n
-```
+Thanks.
