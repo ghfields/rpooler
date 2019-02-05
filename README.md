@@ -17,7 +17,6 @@ ubuntu-ubiquity [HOWTO install Ubuntu 18.04 to a Whole Disk Native ZFS Root File
 - Simplfy the installation process to the point of automation.
 - Upstream and intergrate as is "legally" possible. I wish this script wasn't required.
 - Encourage best practices through the guides practices.
-- 
 
 ## Supported distributions
 Currently only ubuntu using the ubiquity installer is the only option.
