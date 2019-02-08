@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# I made bunch of edits save and try and run script. AS IS RIGHT NOW.
+# script fails.
+# their is one " -> out of place.
+# if anyone can show me the proper way to debug this i would really appreciate it.
+# i just started deleting code from the bottom up, found the bug the shellcheck.
+
 set -e
 
 # root privilages required
@@ -138,7 +144,7 @@ opt_cmdline()
                     msg -q "log file exists"
                     select i in Append Remove; do
                         case "$i" in
-                            Remove) rm "$OPT_LOG_FILE";;
+                            Remove) rm "$OPT_LOG_FILE"
                         esac
                         break
                     done
@@ -148,7 +154,7 @@ opt_cmdline()
                 OPT_LOG_CMD="$2"
                 if [ -f "$OPT_LOG_CMD" ]; then
                     msg -q "command log file exists"
-                    read -e -p "delete ? " -i "y"
+                    read -e -p "delete ? " -i "n"
                     if [ $REPLY == 'y' ]; then
                         rm "$OPT_LOG_CMD"
                     else
@@ -188,10 +194,7 @@ detect_os()
 zfs_bootstrap()
 {   # bootstrap zfs on host
     case "$OS_DISTRIBUTOR" in
-        Ubuntu)
-            _exec apt update 
-            _exec apt install -y zfsutils
-        ;;
+        Ubuntu) _exec apt update && apt install -y zfsutils
     esac
 }
 
@@ -200,19 +203,20 @@ zfs_config()
     
     msg -i "ZFS configuration"
     read -e -p "ZPOOL_NAME=" -i "rpool" ZPOOL_NAME
-    
-    msg -i "VDEV layout"
-    disk_avail=$(find /dev/disk/by*id/* | grep -v 'part')
-    disk_select=
-    for disk in $disk_avail; do
-        disk_identifier=$(fdisk -l $disk 2> /dev/null | awk '/Disk identifier:/ {printf $3}')
-        disk_type=$(fdisk -l $disk $disk 2> /dev/null | awk '/Disklabel type:/ {printf $3}')
-        disk_size=$(fdisk -l $disk $disk 2> /dev/null  | head -n 1 | awk '{bytes=$5; gb=bytes/1024/1024/1024; printf gb}')
-        echo -e "$disk\t$disk_identifier\t$disk_type\t$disk_size"
-    done
+
+    # vdev layout
+#    disk_avail=$(find /dev/disk/by*id/* | grep -v 'part')
+#    disk_select=
+#    for disk in $disk_avail; do
+#        disk_identifier=$(fdisk -l $disk | awk '/Disk identifier:/ {print $3}')
+#        disk_type=$(fdisk -l $disk | awk '/Disklabel type:/ {print $3')
+#        disk_size=$(fdisk -l $disk | head -n 1 | awk '{FS=" "; OFS="\t"}{bytes=$5; gb=bytes/1024/1024/1024; printf "%3.0f gb\n", gb}')
+#        echo -e "$disk\t $disk_identifier $disk_type $disk_size"
+#    done
 
     read -p "HALT"
 
+    msg -i "VDEV layout"
     select _disk in $(ls "$_path"); do
         layout="$_path$_disk"
         break
@@ -294,7 +298,7 @@ os_install()
             read -p "Press any key to launch Ubiquity. These instructions will remain visible in the terminal window."
             
             _exec ubiquity --no-bootloader
-            _exec rsync -avPX --exclude '/swapfile' /target/. /${ZPOOL_NAME}${ZPOOL_ROOT}/.
+            _exec rsync -avPX --exclude '/swapfile' /target/. /${ZPOOL_NAME}${ZPOOL_ROOT}/."
         ;;
         gentoo)
             echo "TODO"
@@ -302,58 +306,6 @@ os_install()
     esac
 }
 
-cleanup()
-{   # final system cleanups
-    _exec "swapoff -a"
-    _exec "umount /target"
-
-    mount | grep -v zfs | tac | awk '/\/rpool/ {print $3}' | xargs -i{} umount -lf {}
-    _exec "zfs destroy $pool/ubuntu-temp"
-    _exec "zpool export $pool"
-}
-
-sys_config()
-{   # Generic system configuration
-
-    # bind local /proc with chroot
-    for d in proc sys dev; do
-        _exec "mount --bind /$d /$pool$root/$d"
-    done
-
-    # network config
-    _exec "cp /etc/resolv.conf /$pool$root/etc/resolv.conf"
-    _exec "sed -e '/\s\/\s/ s/^#*/#/' -i /$pool$root/etc/fstab"
-    _exec "sed -e '/\sswap\s/ s/^#*/#/' -i /$pool$root/etc/fstab"
-
-    # zfs-initramfs grub config
-    _exec "chroot /$pool$root apt update"
-    _exec "chroot /$pool$root apt install -y zfs-initramfs"
-    _exec "chroot /$pool$root update-grub"
-
-    drives="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
-    for i in $drives; do 
-        _exec "chroot /$pool$root sgdisk -a1 -n2:512:2047 -t2:EF02 $i"
-        _exec "chroot /$pool$root grub-install $i"
-    done
-    
-
-    _exec "echo RESUME=none > /$pool$root/etc/initramfs-tools/conf.d/resume"
-    _exec "echo /dev/zvol/$pool/swap none swap defaults 0 0 >> /$pool$root/etc/fstab"
-    _exec "zfs set mountpoint=/ $pool$root"
-}
-
-_reboot()
-{
-    read -e -p "Do you want to restart now ?" -i 'n'
-    if [ "$REPLY" == 'y' ]; then
-        _exec "shutdown -r 0"
-    fi
-    _msg "If first boot hangs, reset computer and try boot again."
-    exit 0
-}
-
-
-opt_cmdline "$@"
 
 detect_os
 
@@ -366,12 +318,6 @@ zfs_config
 #cleanup
 #_reboot
 
-test_opt_cmdline()
-{
-    echo "opt_dryrun=$OPT_DRYRUN"
-    echo "opt_debug=$OPT_DEBUG"
-    echo "opt_log_cmd=$OPT_LOG_CMD"
-    echo "opt_log_file=$OPT_LOG_FILE"
-}
+
 
 

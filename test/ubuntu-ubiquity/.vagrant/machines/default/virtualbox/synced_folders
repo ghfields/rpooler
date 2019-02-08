@@ -1,1 +1,0 @@
-{"virtualbox":{"/zfs-install":{"guestpath":"/zfs-install","hostpath":"/hack/zfs-install/src","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"/hack/zfs-install/test/ubuntu-ubiquity","disabled":false,"__vagrantfile":true}}}
