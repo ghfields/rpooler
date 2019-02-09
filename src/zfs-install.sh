@@ -49,24 +49,31 @@ msg()
     #   -c | --cmd      _exec stdout
     #   -d | --debug    Debug
     #   -i | --info     Notice
+    #   -q | --question Question
 
     MSG_TEXT='--> '
     MSG_TEXT_STYLE=
 
     while (( "$#" )); do
         case "$1" in
-            -i)         MSG_TEXT_COLOR=green;;
-            -q)         MSG_TEXT_COLOR=green; MSG_TEXT_STYLE='--bold';;
-            -e)         MSG_TEXT_COLOR=red; MSG_TEXT_STYLE='--bold';;
-            -c)         MSG_TEXT_COLOR=blue;;
-            -d)         MSG_TEXT_COLOR=yellow; MSG_TEXT_STYLE='--bold';;
-            -*|--*=)    msg -e "msg() unsupported flag $1"; exit 1;;
-            *)          MSG_TEXT+="$1 ";;
+            -i | --info)        MSG_TEXT_COLOR=green;;
+            -q | --question)    MSG_TEXT_COLOR=green; MSG_TEXT_STYLE='--bold';;
+            -e | --error)       MSG_TEXT_COLOR=red; MSG_TEXT_STYLE='--bold';;
+            -c | --command)     MSG_TEXT_COLOR=blue;;
+            -d | --debug)       MSG_TEXT_COLOR=yellow; MSG_TEXT_STYLE='--bold';;
+            -*|--*=)            msg -e "msg() unsupported flag $1"; exit 1;;
+            *)                  MSG_TEXT+="$1 ";;
         esac
         shift
     done
 
+    if [ "$MSG_TEXT_COLOR" == "red" ]; then
+        _echo -c $MSG_TEXT_COLOR $MSG_TEXT_STYLE $MSG_TEXT
+        exit 1
+    fi 
     _echo -c $MSG_TEXT_COLOR $MSG_TEXT_STYLE $MSG_TEXT
+
+
 }
 
 _select_multi()
@@ -103,18 +110,25 @@ _exec()
 
     CMD="$@"
     msg -c "$CMD"
-    if [ "$OPT_LOG_CMD" != '' ]; then
-        echo "$CMD" >> "$OPT_LOG_CMD"
+    if [ "$OPT_DEBUG" == '1' ]; then
+        read -e -p "$ " -i "$_CMD"
+        if [ "$_CMD" != "$CMD" ]; then
+            msg -c "$_CMD"
+            CMD=$_CMD
+        fi
     fi
     if [ "$OPT_DRYRUN" != '1' ]; then
-        if [ "$OPT_DEBUG" == '1' ]; then
-            read -e -p "$ " -i "$CMD"
-        fi
+        printf "\e[37m"
         if [ "$OPT_LOG_FILE" != '' ]; then
-            bash -c "$CMD" | tee "$OPT_LOG_FILE"
+            echo -e "$ $CMD" >> "$OPT_LOG_FILE"
+            bash -c "$CMD" 2>&1 | tee -a "$OPT_LOG_FILE"
         else
             bash -c "$CMD"
         fi
+        printf "\e[0m"
+    fi
+    if [ "$OPT_LOG_CMD" != '' ]; then
+        echo "$CMD" >> "$OPT_LOG_CMD"
     fi
 }
 
@@ -136,20 +150,15 @@ opt_cmdline()
                 OPT_LOG_FILE="$2"
                 if [ -f "$OPT_LOG_FILE" ]; then
                     msg -q "log file exists"
-                    select i in Append Remove; do
-                        case "$i" in
-                            Remove) rm "$OPT_LOG_FILE";;
-                        esac
-                        break
-                    done
-                fi
-                shift;;
+                    read -e -p "Append, Delete ? [a/d] " -i 'a'
+                    [[ "$REPLY" == 'd' ]] && echo '' > "$OPT_LOG_FILE"
+                fi;;
             -c | --log-cmd) 
                 OPT_LOG_CMD="$2"
                 if [ -f "$OPT_LOG_CMD" ]; then
                     msg -q "command log file exists"
-                    read -e -p "delete ? " -i "y"
-                    if [ $REPLY == 'y' ]; then
+                    read -e -p "Delete ? [d] " -i "d"
+                    if [ $REPLY == 'd' ]; then
                         rm "$OPT_LOG_CMD"
                     else
                         msg -e "please choose another filename."
@@ -189,59 +198,98 @@ zfs_bootstrap()
 {   # bootstrap zfs on host
     case "$OS_DISTRIBUTOR" in
         Ubuntu)
-            _exec apt update 
-            _exec apt install -y zfsutils
+            _exec apt-get update 
+            _exec apt-get install -y zfsutils
         ;;
     esac
 }
 
 zfs_config()
-{   # generic zfs configuration
+{   # config zfs
+    msg -i "ZFS Config"
     
-    msg -i "ZFS configuration"
-    read -e -p "ZPOOL_NAME=" -i "rpool" ZPOOL_NAME
+    msg -i "ZPOOL Config"
+    # zpool exists
+    zpool_list=$(zfs list | tail -n +2 )
+    if [ "$zpool_list" != '' ]; then
+        msg -i "zpool found."
+        zpool_root=$(zfs list / | tail -n +2)
+        zpool list
+        
+        if [ "$zpool_root" != '' ]; then
+            msg -i "root zvol found."
+            zvol_root=$(zfs list / | tail -n +2)
+            zfs list /
+        
+            zvol_root_mounted=$(zfs list -o mounted / | tail -n +2 | awk '{gsub(/ /, "", $0); print}')
+            if [ "$zvol_root_mounted" == 'yes' ]; then
+                msg -i "mounted"
+                msg -e "TODO live migration"
+            else
+                msg -i "not mounted."
+            fi
+        fi
+    else
+        # zpool root config
+        read -e -p "ZPOOL_NAME=" -i "rpool" ZPOOL_NAME
     
-    msg -i "VDEV layout"
-    disk_avail=$(find /dev/disk/by*id/* | grep -v 'part')
-    disk_select=
-    for disk in $disk_avail; do
-        disk_identifier=$(fdisk -l $disk 2> /dev/null | awk '/Disk identifier:/ {printf $3}')
-        disk_type=$(fdisk -l $disk $disk 2> /dev/null | awk '/Disklabel type:/ {printf $3}')
-        disk_size=$(fdisk -l $disk $disk 2> /dev/null  | head -n 1 | awk '{bytes=$5; gb=bytes/1024/1024/1024; printf gb}')
-        echo -e "$disk\t$disk_identifier\t$disk_type\t$disk_size"
-    done
+        msg -i "Physical / Virtual Disks..."
+        # disk.list header
+        printf "%-40s\t%-40s\t%s\t\n" "Indentifier" "Path" "Type" "Format" "Size"
 
-    read -p "HALT"
+        disk_avail=$(find /dev/disk/by*id/* | grep -v 'part')
+        for disk_path in $disk_avail; do
+            disk_identifier=$(fdisk -l $disk_path 2> /dev/null | awk '/Disk identifier:/ {printf $3}')
+            disk_type=$(fdisk -l $disk_path 2> /dev/null | awk '/Disklabel type:/ {printf $3}')
+            disk_size=$(fdisk -l $disk_path 2> /dev/null  | head -n 1 | awk '{bytes=$5; gb=bytes/1024/1024/1024; printf "%.0fG", gb}')
+            disk_type=disk
+            if [ "$disk_identifier" != '' ]; then
+                printf "%-40s\t%-40s\t%s\t%s\n" "$disk_identifier" "$disk_path" "$disk_type" "$disk_format" "$disk_size" >> disks.tmp
+            fi
+        done
+        
+        sort -n disks.tmp -u -k1 > disks.unique
 
-    select _disk in $(ls "$_path"); do
-        layout="$_path$_disk"
-        break
-    done
+        for disk in $(awk '{path=$2; print path}' disks.unique); do
+            awk -v disk_path="$disk" '$0 ~ disk_path {path=$2;type=$3;size=$4; print path,type,size}' disks.unique
+            fdisk -l $disk | awk '/part/ {path=$1;size=$5;type=partition;format=substr($0, index($0,$6)); print path,type,format,size}'
+        done
+        
+        msg -e "TODO vdev layount"
 
-    # create zpool
-    # TODO zpool.cfg
-    read -p "VDEV_LAYOUT=" -i "$layout" -e layout
-    read -p "ZPOOL_OPTIONS=" -i "-o feature@multi_vdev_crash_dump=disabled \
-        -o feature@large_dnode=disabled \
-        -o feature@sha512=disabled \
-        -o feature@skein=disabled \
-        -o feature@edonr=disabled \
-        -o ashift=12 \
-        -O atime=off \
-        -O compression=lz4 \
-        -O normalization=formD \
-        -O recordsize=1M \
-        -O xattr=sa" -e ZPOOL_OPTIONS
-    
-    # Swap file calculation
-    systemramk=$(free -m | awk '/^Mem:/{print $2}')
-    systemramg=$(echo "scale=2; $systemramk/1024" | bc)
-    suggestswap=$(printf %.$2f $(echo "scale=2; sqrt($systemramk/1024)" | bc))
+        select _disk in $(ls "$_path"); do
+            layout="$_path$_disk"
+            break
+        done
 
-    read -e -p "zvol_swap_size=" -i $suggestswap swapzvol
-    
-    # root dataset
-    read -p "root_dataset=" -i "/ROOT/ubuntu-1" -e root
+        # create zpool
+        # TODO zpool.cfg
+        read -p "VDEV_LAYOUT=" -i "$layout" -e VDEV_LAYOUT
+        read -p "ZPOOL_OPTIONS=" -i "-o feature@multi_vdev_crash_dump=disabled \
+            -o feature@large_dnode=disabled \
+            -o feature@sha512=disabled \
+            -o feature@skein=disabled \
+            -o feature@edonr=disabled \
+            -o ashift=12 \
+            -O atime=off \
+            -O compression=lz4 \
+            -O normalization=formD \
+            -O recordsize=1M \
+            -O xattr=sa" -e ZPOOL_OPTIONS
+        
+        # Swap file calculation
+        systemramk=$(free -m | awk '/^Mem:/{print $2}')
+        systemramg=$(echo "scale=2; $systemramk/1024" | bc)
+        suggestswap=$(printf %.$2f $(echo "scale=2; sqrt($systemramk/1024)" | bc))
+
+        read -e -p "zvol_swap_size=" -i $suggestswap swapzvol
+        
+        # root dataset
+        read -e -p "ROOT_DATASET=" -i "/ROOT/ubuntu-1" -e root
+
+        # cleanup
+        rm disks.{tmp,unique}
+    fi
 }
 
 zfs_create()
@@ -365,13 +413,4 @@ zfs_config
 #zfs_create_snapshot
 #cleanup
 #_reboot
-
-test_opt_cmdline()
-{
-    echo "opt_dryrun=$OPT_DRYRUN"
-    echo "opt_debug=$OPT_DEBUG"
-    echo "opt_log_cmd=$OPT_LOG_CMD"
-    echo "opt_log_file=$OPT_LOG_FILE"
-}
-
 
