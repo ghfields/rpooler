@@ -29,10 +29,9 @@ ubuntu-ubiquity [HOWTO install Ubuntu 18.04 to a Whole Disk Native ZFS Root File
 ## Supported distributions
 Currently only ubuntu using the ubiquity installer is the only option.
 
-- ubuntu-ubiquity
+- ubuntu/bionic
 
 TODO
-- ubuntu-debootstrap
 - arch
 - gentoo
 - debian
@@ -44,8 +43,8 @@ TODO
 ## Instructions
 1) Boot supported distribtion
 2) run zfs-install.sh
-3) follow normal install process
-4) need to confirm zfs disk!
+3) answer any required questions.
+4) Your done.
 
 ## Contributions
 Any and all contibutions in any form are encouraged and most welcome.
@@ -53,4 +52,5 @@ Any and all contibutions in any form are encouraged and most welcome.
 There doesn't appear to be many people interested in this project, thats cool!
 I would appreciate the time of any other zfs users. 
 
-What method do you use to "bootstrap" zfs for your use case ?
+- What method do you use to "bootstrap" zfs for your use case ?
+- I'm guessing most people are using packer to create custom iso's. is this Correct ?

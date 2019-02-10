@@ -1,0 +1,27 @@
+{
+    "builders": [{
+        "vm_name": "ubuntu-bionic-live",
+        "type": "virtualbox-iso",
+        "guest_os_type": "Ubuntu_64",
+        "iso_url": "../../iso/ubuntu/ubuntu-18.04.1-desktop-amd64.iso",
+        "iso_checksum": "f430da8fa59d2f5f4262518e3c177246",
+        "iso_checksum_type": "md5",
+            "boot_command": [
+                "<esc><wait>",
+                "<esc><wait>",
+                "<enter><wait>",
+                "/install/vmlinuz",
+                " initrd=/install/initrd.gz",
+                " auto=true",
+                " priority=critical",
+                " url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `preseed_path`}}",
+                "<enter>"
+            ],
+        "ssh_username": "ubuntu"
+    }],
+    "provisioners": [
+    ],
+    "post-processors": [
+    ]
+}
+        "shutdown_command": "echo '{{ user `ssh_password` }}'|sudo -S shutdown -P now",

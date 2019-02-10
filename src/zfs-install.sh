@@ -15,30 +15,42 @@ _echo()
         exit 1
     fi
 
-    MSG_TEXT=""
-    MSG_TEXT_STYLE='0'
+    _TEXT=''
+    _STYLE=''
 
     while (( "$#" )); do
         case "$1" in
-            -c)     MSG_TEXT_COLOR=$2; shift;;
-            --bold) MSG_TEXT_STYLE=1;;
-            *)      MSG_TEXT+="$1 ";;
+            -c | --color)   _COLOR="$2"; shift;;
+            --bold)         _STYLE+='1';;
+            --dim)          _STYLE+='2';;
+            --underline)    _STYLE+='4';;
+            --invert)       _STYLE+='7';;
+            --hidden)       _STYLE+='8';;
+            *)              _TEXT+="$1 ";;
         esac
         shift
     done
 
-    case $MSG_TEXT_COLOR in
-        black)  MSG_TEXT_COLOR='30';;
-        red)    MSG_TEXT_COLOR='31';;
-        green)  MSG_TEXT_COLOR='32';;
-        yellow) MSG_TEXT_COLOR='33';;
-        blue)   MSG_TEXT_COLOR='34';;
-        purple) MSG_TEXT_COLOR='35';;
-        cyan)   MSG_TEXT_COLOR='36';;
-        white)  MSG_TEXT_COLOR='37';;
+    case $_COLOR in
+        default)        _COLOR='39';;
+        black)          _COLOR='30';;
+        red)            _COLOR='31';;
+        green)          _COLOR='32';;
+        yellow)         _COLOR='33';;
+        blue)           _COLOR='34';;
+        purple)         _COLOR='35';;
+        cyan)           _COLOR='36';;
+        gray)           _COLOR='37';;
+        darkgray)       _COLOR='90';;
+        lightred)       _COLOR='91';;
+        lightgreen)     _COLOR='92';;
+        lightyellow)    _COLOR='93';;
+        lightblue)      _COLOR='94';;
+        lightpurple)    _COLOR='95';;
+        lightcyan)      _COLOR='95';;
+        white)          _COLOR='97';;
     esac
-
-    printf "\033[${MSG_TEXT_STYLE};${MSG_TEXT_COLOR}m${MSG_TEXT}\033[0m\n"
+    printf "\e[$_STYLE;${_COLOR}m${_TEXT}\e[0m\n"
 }
 
 msg()
@@ -56,22 +68,22 @@ msg()
 
     while (( "$#" )); do
         case "$1" in
-            -i | --info)        MSG_TEXT_COLOR=green;;
-            -q | --question)    MSG_TEXT_COLOR=green; MSG_TEXT_STYLE='--bold';;
-            -e | --error)       MSG_TEXT_COLOR=red; MSG_TEXT_STYLE='--bold';;
-            -c | --command)     MSG_TEXT_COLOR=blue;;
-            -d | --debug)       MSG_TEXT_COLOR=yellow; MSG_TEXT_STYLE='--bold';;
+            -i | --info)        _COLOR=yellow;;
+            -q | --question)    _COLOR=green; MSG_TEXT_STYLE='--bold';;
+            -e | --error)       _COLOR=red; MSG_TEXT_STYLE='--bold';;
+            -c | --command)     _COLOR=lightblue; MSG_TEXT_STYLE='--bold';;
+            -d | --debug)       _COLOR=purple; MSG_TEXT_STYLE='--bold';;
             -*|--*=)            msg -e "msg() unsupported flag $1"; exit 1;;
             *)                  MSG_TEXT+="$1 ";;
         esac
         shift
     done
 
-    if [ "$MSG_TEXT_COLOR" == "red" ]; then
-        _echo -c $MSG_TEXT_COLOR $MSG_TEXT_STYLE $MSG_TEXT
+    if [ "$_COLOR" == "red" ]; then
+        _echo -c $_COLOR $MSG_TEXT_STYLE $MSG_TEXT
         exit 1
     fi 
-    _echo -c $MSG_TEXT_COLOR $MSG_TEXT_STYLE $MSG_TEXT
+    _echo -c $_COLOR $MSG_TEXT_STYLE $MSG_TEXT
 
 
 }
@@ -104,14 +116,12 @@ _select_multi()
 }
 
 _exec()
-{   # simple exec wrapper
-    # - dry-run
-    # - log output
-
+{   # _exec <opt> "cmd | awk '{print $1}' > file"
+    # opt: set via cli, --dry-run --debug -l <log> -c <cmd>
     CMD="$@"
     msg -c "$CMD"
     if [ "$OPT_DEBUG" == '1' ]; then
-        read -e -p "$ " -i "$_CMD"
+        read -e -p "$ " -i "$CMD" _CMD
         if [ "$_CMD" != "$CMD" ]; then
             msg -c "$_CMD"
             CMD=$_CMD
@@ -134,11 +144,14 @@ _exec()
 
 usage()
 {   
-    echo -e "\nzfs-install.sh <options>\n"
-    echo -e "-d | --debug            Interactive command execution"
-    echo -e "-l | --log <file>       Log stdout"
-    echo -e "-c | --log-cmd <file>   Log cmd sequence."
-    echo -e "--dry-run          Process script but no command execution.\n"
+    printf "
+    zfs-install.sh <options>
+    
+    -d | --debug            Interactive command execution.
+    -l | --log <file>       Log stdout.
+    -c | --log-cmd <file>   Log cmd sequence.
+    --dry-run               Process script but no command execution.
+    --silent                Fully automatic. ! NO IMPLEMENTED YET.\n"
 }
 
 opt_cmdline()
@@ -167,147 +180,209 @@ opt_cmdline()
                 fi
                 shift;;
             --dry-run)      OPT_DRYRUN=1;;
-            --help)         usage;;
+            --help)         usage; exit 1;;
             -*|--*)         msg -e "unsupported flag $1"; exit 1;;
         esac
         shift
     done
 }
 
-detect_os()
-{   # get host os
-    if [ -f "/etc/lsb-release" ]; then
-        OS_DISTRIBUTOR=$(lsb_release -si)
-        OS_RELEASE=$(lsb_release -sr)
-        OS_CODENAME=$(lsb_release -sc)
-        OS_DESCRIPTION=$(lsb_release -sd)
-    fi
-    if [ "$OS_CODENAME" == '' ]; then
-        msg -e "Unsupported host operating system."
-        exit 1
-    else
-        msg -i "OS_DISTRIBUTOR=$OS_DISTRIBUTOR"
-        msg -i "OS_CODENAME=$OS_CODENAME"
-        msg -i "OS_RELEASE=$OS_RELEASE"
-        msg -i "OS_DESCRIPTION=$OS_DESCRIPTION"
-    fi
+zfs-config()
+{   # test for host zpool
+    while (( "$#" )); do
+        case "$1" in
+            --root-ds)
+                if [ "$2" == '' ]; then
+                    ZPOOL_ROOT_DS="ROOT"
+                else
+                    ZPOOL_ROOT_DS="$2"
+                fi
+            ;;
+            --root-fs)
+                if [ "$2" == '' ]; then
+                    ZPOOL_ROOT_FS="$OS_CODENAME"
+                else
+                    ZPOOL_ROOTFS_NAME="$2"
+                fi
+            ;;
+            --pool-name)
+                if [ "$2" == '' ]; then
+                    ZPOOL_POOL_NAME='rpool'
+                else
+                    ZPOOL_POOL_NAME="$2"
+                fi
+            ;;
+            --disks)
+                if [ "$2" == '' ]; then
+                    disk-config --select ZPOOL_DISKS
+                else
+                    ZPOOL_DISKS="$2"
+                fi
+            ;;
+            --swap)   
+                ZPOOL_ZVOL_SWAP="$2"
+            ;;
+            --swap-size)
+                if [ "$2" == '' ]; then
+                    systemramk=$(free -m | awk '/^Mem:/{print $2}')
+                    systemramg=$(echo "scale=2; $systemramk/1024" | bc)
+                    suggestswap=$(printf %.$2f $(echo "scale=2; sqrt($systemramk/1024)" | bc))
+                    ZPOOL_ZVOL_SWAP_SIZE="$suggestswap"
+                else
+                    ZPOOL_ZVOL_SWAP_SIZE="$2"
+                fi
+            ;;
+            list)   
+                zpool_list=$(zfs list | tail -n +2 )
+                if [ "$zpool_list" != '' ]; then
+                    msg -i "zpool found."
+                    zpool_root=$(zfs list / | tail -n +2)
+                    zpool list
+                    
+                    if [ "$zpool_root" != '' ]; then
+                        msg -i "root zvol found."
+                        zvol_root=$(zfs list / | tail -n +2)
+                        zfs list /
+                    
+                        zvol_root_mounted=$(zfs list -o mounted / | tail -n +2 | awk '{gsub(/ /, "", $0); print}')
+                        if [ "$zvol_root_mounted" == 'yes' ]; then
+                            msg -i "mounted"
+                            msg -e "TODO live migration"
+                        else
+                            msg -i "not mounted."
+                        fi
+                    fi
+                else
+                    msg -i "no zpool found."
+                fi
+            ;;
+        esac
+        shift
+    done
+}
+
+disk_part_drive()
+{   # hack to get to return the disk of partition.
+    # _disk_part </dev/partition>
+    # returns /dev/drive
+
+    part=$1
+    part=${part#/dev/}
+    disk=$(readlink /sys/class/block/$part)
+    disk=${disk%/*}
+    disk=/dev/${disk##*/}
+    echo $disk 
+}
+
+disk-config()
+{   # Basic physical / virtual disks config.
+    # TODO better layout of partitions
+    # TODO basic used,avail stats per disk.
+
+    while (( "$#" )); do
+        case "$1" in
+            --list)
+                lsblk -flp -o name,uuid,label,type,fstype,size,mountpoint,model
+            ;;
+            --select)
+                # return available list of drives.
+                disk_root=$(disk_part_drive $(lsblk -lo name,uuid,mountpoint --noheadings | awk '$3 == "/" {print}'))
+                for disk_name in $(lsblk -dpl -o name,fstype --noheadings | awk -v disk_root="${disk_root}" '!/iso9660/ && $0!~disk_root {print}'); do
+                    disk_list+="$disk_name "
+                done
+                disk_list_count=$(echo "$disk_list" | awk '{print NF}')
+                if [ "$disk_list_count" == '1' ]; then
+                    export "$2"="$disk_list"
+                else
+                    _select_multi "$2" $disk_list 
+                fi
+            ;;
+        esac
+        shift
+    done
 }
 
 
-zfs_bootstrap()
-{   # bootstrap zfs on host
-    case "$OS_DISTRIBUTOR" in
-        Ubuntu)
-            _exec apt-get update 
-            _exec apt-get install -y zfsutils
-        ;;
-    esac
-}
+zfs-create()
+{   # create zpool and datasets
+    msg -i "ZPOOL: create"
+    # clean partition tables
+    _exec "sgdisk --zap-all $ZPOOL_DISKS"
 
-zfs_config()
-{   # config zfs
-    msg -i "ZFS Config"
+    # legacy bios boot
+    #_exec "sgdisk -a1 -n2:34:2047  -t2:EF02 $ZPOOL_DISKS"
+
+    # unencrypted volume
+    #_exec "sgdisk -n1:0:0 -t1:BF01 $ZPOOL_DISKS"
+
+    # create zpool
+    _exec "zpool create \
+        -o ashift=12 \
+        -o altroot=/mnt \
+        -O atime=off \
+        -O relatime=on \
+        -O compression=lz4 \
+        -O mountpoint=/$ZPOOL_POOL_NAME \
+        -m none $ZPOOL_POOL_NAME $ZPOOL_VDEV $ZPOOL_DISKS"
     
-    msg -i "ZPOOL Config"
-    # zpool exists
-    zpool_list=$(zfs list | tail -n +2 )
-    if [ "$zpool_list" != '' ]; then
-        msg -i "zpool found."
-        zpool_root=$(zfs list / | tail -n +2)
-        zpool list
-        
-        if [ "$zpool_root" != '' ]; then
-            msg -i "root zvol found."
-            zvol_root=$(zfs list / | tail -n +2)
-            zfs list /
-        
-            zvol_root_mounted=$(zfs list -o mounted / | tail -n +2 | awk '{gsub(/ /, "", $0); print}')
-            if [ "$zvol_root_mounted" == 'yes' ]; then
-                msg -i "mounted"
-                msg -e "TODO live migration"
-            else
-                msg -i "not mounted."
-            fi
-        fi
-    else
-        # zpool root config
-        read -e -p "ZPOOL_NAME=" -i "rpool" ZPOOL_NAME
+    # create filesystem dataset for the root filesystem
+    _exec "zfs create \
+        -o mountpoint=none \
+        $ZPOOL_POOL_NAME/$ZPOOL_ROOT_DS"
     
-        msg -i "Physical / Virtual Disks..."
-        # disk.list header
-        printf "%-40s\t%-40s\t%s\t\n" "Indentifier" "Path" "Type" "Format" "Size"
+    # create boot environment
+    _exec "zfs create \
+        -o mountpoint=/ \
+        $ZPOOL_POOL_NAME/$ZPOOL_ROOT_DS/$ZPOOL_ROOTFS_NAME"
+   
+    _exec "zpool set bootfs=$ZPOOL_POOL_NAME/$ZPOOL_ROOT_DS/$ZPOOL_ROOTFS_NAME $ZPOOL_POOL_NAME"
 
-        disk_avail=$(find /dev/disk/by*id/* | grep -v 'part')
-        for disk_path in $disk_avail; do
-            disk_identifier=$(fdisk -l $disk_path 2> /dev/null | awk '/Disk identifier:/ {printf $3}')
-            disk_type=$(fdisk -l $disk_path 2> /dev/null | awk '/Disklabel type:/ {printf $3}')
-            disk_size=$(fdisk -l $disk_path 2> /dev/null  | head -n 1 | awk '{bytes=$5; gb=bytes/1024/1024/1024; printf "%.0fG", gb}')
-            disk_type=disk
-            if [ "$disk_identifier" != '' ]; then
-                printf "%-40s\t%-40s\t%s\t%s\n" "$disk_identifier" "$disk_path" "$disk_type" "$disk_format" "$disk_size" >> disks.tmp
-            fi
-        done
-        
-        sort -n disks.tmp -u -k1 > disks.unique
-
-        for disk in $(awk '{path=$2; print path}' disks.unique); do
-            awk -v disk_path="$disk" '$0 ~ disk_path {path=$2;type=$3;size=$4; print path,type,size}' disks.unique
-            fdisk -l $disk | awk '/part/ {path=$1;size=$5;type=partition;format=substr($0, index($0,$6)); print path,type,format,size}'
-        done
-        
-        msg -e "TODO vdev layount"
-
-        select _disk in $(ls "$_path"); do
-            layout="$_path$_disk"
-            break
-        done
-
-        # create zpool
-        # TODO zpool.cfg
-        read -p "VDEV_LAYOUT=" -i "$layout" -e VDEV_LAYOUT
-        read -p "ZPOOL_OPTIONS=" -i "-o feature@multi_vdev_crash_dump=disabled \
-            -o feature@large_dnode=disabled \
-            -o feature@sha512=disabled \
-            -o feature@skein=disabled \
-            -o feature@edonr=disabled \
-            -o ashift=12 \
-            -O atime=off \
-            -O compression=lz4 \
-            -O normalization=formD \
-            -O recordsize=1M \
-            -O xattr=sa" -e ZPOOL_OPTIONS
-        
-        # Swap file calculation
-        systemramk=$(free -m | awk '/^Mem:/{print $2}')
-        systemramg=$(echo "scale=2; $systemramk/1024" | bc)
-        suggestswap=$(printf %.$2f $(echo "scale=2; sqrt($systemramk/1024)" | bc))
-
-        read -e -p "zvol_swap_size=" -i $suggestswap swapzvol
-        
-        # root dataset
-        read -e -p "ROOT_DATASET=" -i "/ROOT/ubuntu-1" -e root
-
-        # cleanup
-        rm disks.{tmp,unique}
+    if [ "$ZPOOL_ZVOL_SWAP" == 'on' ]; then
+        _exec "zfs create \
+            -V ${ZPOOL_ZVOL_SWAP_SIZE}G \
+            -b $(getconf PAGESIZE) \
+            -o compression=zle \
+            -o logbias=throughput \
+            -o sync=always \
+            -o primarycache=metadata \
+            -o secondarycache=none \
+            -o com.sun:auto-snapshot=false \
+            $ZPOOL_POOL_NAME/swap"
+        _exec "sleep 1"
+        _exec "mkswap -f /dev/zvol/$ZPOOL_POOL_NAME/swap"
     fi
-}
+    
+    # create mount points
+    _exec "zfs create \
+        -o mountpoint=/home \
+        $ZPOOL_POOL_NAME/home"
+    _exec "zfs create \
+        -o mountpoint=/usr \
+        $ZPOOL_POOL_NAME/$ZPOOL_ROOT_DS/$ZPOOL_ROOTFS_NAME/usr"
+    _exec "zfs create \
+        -o mountpoint=/var \
+        $ZPOOL_POOL_NAME/$ZPOOL_ROOT_DS/$ZPOOL_ROOTFS_NAME/var"
+    _exec "zfs create \
+        -o mountpoint=/var/tmp \
+        -o setuid=off \
+        $ZPOOL_POOL_NAME/$ZPOOL_ROOT_DS/$ZPOOL_ROOTFS_NAME/var/tmp"
+    _exec "zfs create \
+        -o mountpoint=/tmp \
+        -o setuid=off \
+        $ZPOOL_POOL_NAME/tmp"
 
-zfs_create()
-{   # create zpool
-    _exec "zpool create -f $options $pool $layout" 
-    if [[ "$HOST_OS" == 'ubuntu' ]]; then
-        _exec "zfs create -V 10G $pool/ubuntu-temp"
-    fi
+    _exec "zfs set mountpoint=legacy $ZPOOL_POOL_NAME/tmp"
+    
+    _exec "zpool export $ZPOOL_POOL_NAME"
 
-    # create zfs swap volume
-    if [[ $swapzvol -ne 0 ]]; then
-        _exec "zfs create -V ${swapzvol}G -b $(getconf PAGESIZE) -o compression=zle \
-            -o logbias=throughput -o sync=always \
-            -o primarycache=metadata -o secondarycache=none \
-            -o com.sun:auto-snapshot=false $pool/swap"
-        _exec "mkswap -f /dev/zvol/$pool/swap"
-    fi
-    _exec "zfs create -p $pool$root"
+    # import and create cache file
+    _exec "zpool import -R /mnt $ZPOOL_POOL_NAME"
+    _exec "mkdir -p /mnt/etc/zfs"
+    _exec "zpool set cachefile=/mnt/etc/zfs/zpool.cache $ZPOOL_POOL_NAME"
+    
+    # list zfs config
+    _exec "zpool get all $ZPOOL_POOL_NAME"
+    _exec "zfs list -t all -o name,type,mountpoint,compress,exec,setuid,atime,relatime"
 }
 
 zfs_snapshot()
@@ -325,27 +400,94 @@ zfs_snapshot()
     done
 }
 
-os_install()
-{   # initial ubuntu-ubiquity installer.
+os-install()
+{   # _os <option> <stage>
+    # 
+    # stage:
+    #   zfs-bootstrap
+    #   install
+    #   config
     case "$1" in
-        ubiquity)
-            
-            # TODO implement in preseed.cfg
-            msg -i "Ubiquity Installer\n"
-            msg -i "Please follow these steps"
-            msg -i "1) Choose any options you wish until you get to the 'Installation Type' screen."
-            msg -i "2) Select 'Erase disk and install Ubuntu' and click 'Continue'."
-            msg -i "3) Change the 'Select drive:' dropdown to /dev/zd0 - 10.7 GB Unknown' and click 'Install Now'."
-            msg -i "4) A popup summarizes your choices and asks 'Write the changes to disks?'. Click 'Continue'."
-            msg -i "5) At this point continue through the installer normally."
-            msg -i "6) Finally, a message comes up 'Installation Complete'. Click the 'Continue Testing'." 
-            read -p "Press any key to launch Ubiquity. These instructions will remain visible in the terminal window."
-            
-            _exec ubiquity --no-bootloader
-            _exec rsync -avPX --exclude '/swapfile' /target/. /${ZPOOL_NAME}${ZPOOL_ROOT}/.
+        detect)
+            if [ -f "/etc/lsb-release" ]; then
+                OS_DISTRIBUTOR=$(lsb_release -si)
+                OS_RELEASE=$(lsb_release -sr)
+                OS_CODENAME=$(lsb_release -sc)
+                OS_DESCRIPTION=$(lsb_release -sd)
+            fi
+            if [ "$OS_CODENAME" == '' ]; then
+                msg -e "Unsupported host operating system."
+                exit 1
+            else
+                msg -i "OS_DISTRIBUTOR=$OS_DISTRIBUTOR"
+                msg -i "OS_CODENAME=$OS_CODENAME"
+                msg -i "OS_RELEASE=$OS_RELEASE"
+                msg -i "OS_DESCRIPTION=$OS_DESCRIPTION"
+            fi
         ;;
-        gentoo)
-            echo "TODO"
+        run)
+            case "$OS_CODENAME" in
+                bionic)
+                    while (( "$#" )); do
+                        case "$1" in
+                            zfs-bootstrap)
+                                _exec "apt-get update"
+                                _exec "apt-get upgrade -y"
+                                _exec "apt-get install -y zfsutils"
+                            ;;
+                            install)
+                                # install base system
+                                _exec "apt install -y debootstrap"
+                                _exec "debootstrap $OS_CODENAME /mnt"
+                            ;;
+                            config)
+                                # config hostname
+                                _exec 'printf "$OS_CODENAME" > /mnt/etc/hostname'
+                                _exec 'printf "127.0.0.1  $OS_CODENAME" >> /mnt/etc/hosts'
+                        
+                                # network
+                                _exec "cp /etc/resolv.conf /mnt/etc/resolv.conf"
+                                
+                                # apt
+                                _exec "cp /etc/apt/sources.list /mnt/apt/sources.list"
+                                # fstab
+                                _exec 'printf "/dev/zvol/$ZPOOL_POOL_NAME/swap\tnone\t\tswap\tdefaults\t0 0\n" >> /mnt/etc/fstab'
+                                _exec 'printf "$ZPOOL_POOL_NAME/tmp\t\t/tmp\t\tzfs\tdefaults\t0 0\n" >> /mnt/etc/fstab'
+
+                                # bind local with chroot
+                                for d in proc sys dev; do
+                                    _exec "mount --rbind /$d /mnt/$d"
+                                done
+
+                                cat << 'EOF' | chroot /mnt /bin/bash
+ln -s /proc/self/mounts /etc/mtab
+update-locale LANG=en_AU.UTF-8
+dpkg-reconfigure locales
+dpkg-reconfigure -f noninteractive  tzdata
+apt update
+apt upgrage -y
+apt install -y --no-install-recommends linux-image-generic zfs-initramfs dosfstools
+update-grub
+EOF
+                            ;;
+
+                        esac
+                        shift
+                    done
+                ;;
+            esac
+        ;;
+        template)
+            while (( "$#" )); do
+                case "$1" in
+                    zfs-bootstrap)
+                    ;;
+                    install)
+                    ;;
+                    config)
+                    ;;
+                esac
+            done
         ;;
     esac
 }
@@ -360,56 +502,25 @@ cleanup()
     _exec "zpool export $pool"
 }
 
-sys_config()
-{   # Generic system configuration
-
-    # bind local /proc with chroot
-    for d in proc sys dev; do
-        _exec "mount --bind /$d /$pool$root/$d"
-    done
-
-    # network config
-    _exec "cp /etc/resolv.conf /$pool$root/etc/resolv.conf"
-    _exec "sed -e '/\s\/\s/ s/^#*/#/' -i /$pool$root/etc/fstab"
-    _exec "sed -e '/\sswap\s/ s/^#*/#/' -i /$pool$root/etc/fstab"
-
-    # zfs-initramfs grub config
-    _exec "chroot /$pool$root apt update"
-    _exec "chroot /$pool$root apt install -y zfs-initramfs"
-    _exec "chroot /$pool$root update-grub"
-
-    drives="$(echo $layout | sed 's/\S*\(mirror\|raidz\|log\|spare\|cache\)\S*//g')"
-    for i in $drives; do 
-        _exec "chroot /$pool$root sgdisk -a1 -n2:512:2047 -t2:EF02 $i"
-        _exec "chroot /$pool$root grub-install $i"
-    done
-    
-
-    _exec "echo RESUME=none > /$pool$root/etc/initramfs-tools/conf.d/resume"
-    _exec "echo /dev/zvol/$pool/swap none swap defaults 0 0 >> /$pool$root/etc/fstab"
-    _exec "zfs set mountpoint=/ $pool$root"
-}
-
 _reboot()
 {
-    read -e -p "Do you want to restart now ?" -i 'n'
+    read -e -p "Reboot ? [y/n]"  -i 'n'
     if [ "$REPLY" == 'y' ]; then
         _exec "shutdown -r 0"
     fi
-    _msg "If first boot hangs, reset computer and try boot again."
+    _msg -i "If system hangs, hard reset!"
     exit 0
 }
 
 
 opt_cmdline "$@"
 
-detect_os
-
-zfs_bootstrap
-zfs_config
-#zfs_create
-#os_install ubuntu-ubiquity
-#sys_config
+os-install detect 
+os-install run zfs-bootstrap
+zfs-config --disks 
+zfs-config --pool-name rpool --root-ds ROOT --root-fs bionic --swap on --swap-size 
+zfs-create
+os-install run install config
 #zfs_create_snapshot
 #cleanup
 #_reboot
