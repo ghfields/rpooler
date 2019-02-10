@@ -13,6 +13,10 @@ Please see wiki for general state of the project
 
 aaron-toponce [General zfs introduction and guidelines](https://pthree.org/2012/04/17/install-zfs-on-debian-gnulinux/)
 
+video:
+
+Linda Kately [Open-ZFS Bootcamp](https://www.youtube.com/watch?v=mLbtJQmfumI&feature=youtu.be)
+
 ## zfsonlinux community documentation for specific distributions.
 
 ubuntu-ubiquity [HOWTO install Ubuntu 18.04 to a Whole Disk Native ZFS Root Filesystem using Ubiquity GUI installer](https://github.com/zfsonlinux/pkg-zfs/wiki/HOWTO-install-Ubuntu-18.04-to-a-Whole-Disk-Native-ZFS-Root-Filesystem-using-Ubiquity-GUI-installer).
