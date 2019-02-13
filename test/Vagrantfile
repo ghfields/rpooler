@@ -1,0 +1,26 @@
+Vagrant.configure('2') do |config|
+  config.vm.box = 'ubuntu/bionic64'
+
+  config.vm.provider :virtualbox do |vb|
+    vb.memory = 256
+  end
+
+  config.vm.define :apt_cache_server do |config|
+    config.vm.hostname = 'cache'
+    config.vm.network :private_network, ip: '10.10.10.3'
+    config.vm.provision :shell, path: 'apt-cache-server.sh'
+  end
+
+  config.vm.define :apt_cache_client do |config|
+    config.vm.hostname = 'ubuntu'
+    config.vm.network :private_network, ip: '10.10.10.4'
+    config.vm.provision :shell, path: 'apt-cache-client.sh'
+  end
+
+  config.vm.define :ubuntu_bionic64_zfs do |config|
+    config.vm.hostname = 'ubuntu-bionic64-zfs'
+    config.vm.network :private_network, ip: '10.10.10.4'
+    config.vm.provision :shell, path: 'apt-cache-client.sh'
+    config.vm.provision :shell, path: 'ubuntu_bionic64_zfs-root.sh'
+  end
+end

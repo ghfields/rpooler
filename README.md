@@ -2,7 +2,11 @@
 
 zfs-install automates the creation of a fully bootable zfs root pool.
 
-Original forked from rpooler with all work "upstreamed", thanks Garrett !
+
+## Thanks
+
+Garrett Fields [original script](https://github.com/ghfields/rpooler)
+Rui [vagrant apt cache](https://github.com/rgl/apt-cache-vagrant)
 
 ## Roadmap
 This project is in developement and unstable, please use rpooler in meantime.
