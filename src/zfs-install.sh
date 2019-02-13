@@ -189,7 +189,7 @@ _zfs()
     case "$1" in
         create)
             # check options are set
-            [[ "${ZPOOL_LAYOUT}" == '' ]] && [[ "${ZPOOL_DISKS}" == '' ]] && _disk select ZPOOL_DISKS
+            [[ "${ZPOOL_LAYOUT}" == '' ]] && [[ "${ZPOOL_DISKS}" == '' ]] && disk select ZPOOL_DISKS
             [[ "${ZPOOL_LAYOUT}" == '' ]] && _zfs layout ZPOOL_LAYOUT
             [[ "${ZPOOL_ROOT_DS}" == '' ]] && read -e -p "ZPOOL_ROOT_DS=" ZPOOL_ROOT_DS
             [[ "${ZPOOL_ROOT_FS}" == '' ]] && read -e -p "ZPOOL_ROOT_FS=" ZPOOL_ROOT_FS
@@ -276,7 +276,7 @@ _zfs()
         ;;
         layout)
             # basic layout setup
-            [[ "${ZPOOL_DISKS}" == '' ]] && _disk select
+            [[ "${ZPOOL_DISKS}" == '' ]] && disk select
             msg -i "ZPOOL:  Layout Configuration"
             msg -i "TODO:   Currently ZPOOL_LAYOUT is passed to zfs create."
             msg -i "? mirror /dev/aaa /dev/bbb mirror /dev/ccc /dev/ddd"
@@ -562,8 +562,8 @@ disk list
 disk select ZPOOL_DISKS
 
 _zfs find "${ZPOOL_DISKS}"
-_disk destroy "${ZPOOL_DISKS}"
-_disk format "${ZPOOL_DISKS}"
+disk destroy "${ZPOOL_DISKS}"
+disk format "${ZPOOL_DISKS}"
 
 read -e -p "ZPOOL_LAYOUT=" -i "${ZPOOL_DISKS}" ZPOOL_LAYOUT
 
