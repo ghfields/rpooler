@@ -2,7 +2,7 @@
 
 # Author:   Shaun Lloyd
 # License:  MIT
-# Version:  0.6
+# Version:  0.7
 # About:    Basic script for the installation of zfs as a root filesytem.
 # Features: With help from vagrant,virtualbox,packer and a few others
 #           - install linux with zfs as root filesystem.
@@ -195,7 +195,6 @@ _zfs()
             [[ "${ZPOOL_ROOT_FS}" == '' ]] && read -e -p "ZPOOL_ROOT_FS=" ZPOOL_ROOT_FS
             [[ "${ZPOOL_POOL_NAME}" == '' ]] && read -ep "ZPOOL_POOL_NAME=" ZPOOL_POOL_NAME
 
-
             msg -i "ZPOOL: create"
             msg -i "ZPOOL_LAYOUT=${ZPOOL_LAYOUT}"
             msg -i "ZPOOL_ROOT_DS=${ZPOOL_ROOT_DS}"
@@ -341,81 +340,81 @@ disk()
     # TODO encryption
     # FIXME disk destroy with fdisk, alllow for non gpt partition drives.
 
-	case "$1" in
-		destroy)
-			# destroy partition tables
-			msg -i "DISK: destroy ${ZPOOL_DISKS}"
-			_exec "sgdisk --zap-all ${ZPOOL_DISKS}"
-		;;
-		format)
-			if [ -d /sys/firmware/efi ]; then
-				# uefi 
-				_exec "sgdisk -n3:1M:+512M -t3:EF00 ${ZPOOL_DISKS}"
-			else
-				# bios
-				_exec "sgdisk -a1 -n2:34:2047 -t2:EF02 ${ZPOOL_DISKS}"
-			fi
+    case "$1" in
+        destroy)
+            # destroy partition tables
+            msg -i "DISK: destroy ${ZPOOL_DISKS}"
+            _exec "sgdisk --zap-all ${ZPOOL_DISKS}"
+        ;;
+        format)
+            if [ -d /sys/firmware/efi ]; then
+                # uefi 
+                _exec "sgdisk -n3:1M:+512M -t3:EF00 ${ZPOOL_DISKS}"
+            else
+                # bios
+                _exec "sgdisk -a1 -n2:34:2047 -t2:EF02 ${ZPOOL_DISKS}"
+            fi
 
-			# unencrypted volume
-			_exec "sgdisk -n1:0:0 -t1:BF01 $ZPOOL_DISKS"
-		;;
-		list)
-			msg -i "DISK: List block devices."
-			lsblk -flp -o name,uuid,label,type,fstype,size,mountpoint,model
-		;;
-		select)
-			# return available list of available drives.
-			disk-part-drive()
-			{   # hack to get drive a partition is on.
-				part=${1}
-				part=${part#/dev/}
-				disk=$(readlink /sys/class/block/$part)
-				disk=${disk%/*}
-				disk=/dev/${disk##*/}
-				echo $disk 
-			}
+            # unencrypted volume
+            _exec "sgdisk -n1:0:0 -t1:BF01 $ZPOOL_DISKS"
+        ;;
+        list)
+            msg -i "DISK: List block devices."
+            lsblk -flp -o name,uuid,label,type,fstype,size,mountpoint,model
+        ;;
+        select)
+            # return available list of available drives.
+            disk-part-drive()
+            {   # hack to get drive a partition is on.
+                part=${1}
+                part=${part#/dev/}
+                disk=$(readlink /sys/class/block/$part)
+                disk=${disk%/*}
+                disk=/dev/${disk##*/}
+                echo $disk 
+            }
 
-			disk_root=$(disk-part-drive $(lsblk -lo name,uuid,mountpoint --noheadings | awk '$3 == "/" {print $1}'))
-			for disk_name in $(lsblk -dpl -o name,fstype --noheadings | awk -v disk_root="${disk_root}" '!/iso9660/ && $0!~disk_root {print}'); do
-				disk_list+="$disk_name "
-			done
+            disk_root=$(disk-part-drive $(lsblk -lo name,uuid,mountpoint --noheadings | awk '$3 == "/" {print $1}'))
+            for disk_name in $(lsblk -dpl -o name,fstype --noheadings | awk -v disk_root="${disk_root}" '!/iso9660/ && $0!~disk_root {print}'); do
+                disk_list+="$disk_name "
+            done
 
-			disk_count=$(echo "$disk_list" | awk '{print NF}')
-			if [ "$disk_count" == '1' ]; then
-				msg -i "DISK: Single disk found, auto format."
-				export "$2"="$disk_list"
-			else
-				msg -q "DISK: Please select disks for root pool ?"
-				_select_multi "$2" $disk_list 
-			fi
-		;;
-	esac
+            disk_count=$(echo "$disk_list" | awk '{print NF}')
+            if [ "$disk_count" == '1' ]; then
+                msg -i "DISK: Single disk found, auto format."
+                export "$2"="$disk_list"
+            else
+                msg -q "DISK: Please select disks for root pool ?"
+                _select_multi "$2" $disk_list 
+            fi
+        ;;
+    esac
 }
 
 os-detect()
-{	# simple os detection, linux obviously for starters.
-	# TODO debian
-	# TODO gentoo
-	# TODO centos
-	# TODO rhel
-	# TODO coreos
-	# TODO linuxfromscratch
-	if [ -f "/etc/lsb-release" ]; then
-		OS_DISTRIBUTOR=$(lsb_release -si)
-		OS_RELEASE=$(lsb_release -sr)
-		OS_CODENAME=$(lsb_release -sc)
-		OS_DESCRIPTION=$(lsb_release -sd)
-	fi
-	if [ "$OS_CODENAME" == '' ]; then
-		msg -e "Unsupported host operating system."
-		exit 1
-	else
-		msg -i "OS_DISTRIBUTOR=$OS_DISTRIBUTOR"
-		msg -i "OS_CODENAME=$OS_CODENAME"
-		msg -i "OS_RELEASE=$OS_RELEASE"
-		msg -i "OS_DESCRIPTION=$OS_DESCRIPTION"
-	fi
-	[[ -d /sys/firmware/efi ]] && OS_BOOT_MODE=UEFI || OS_BOOT_MODE=BIOS	
+{   # simple os detection, linux obviously for starters.
+    # TODO debian
+    # TODO gentoo
+    # TODO centos
+    # TODO rhel
+    # TODO coreos
+    # TODO linuxfromscratch
+    if [ -f "/etc/lsb-release" ]; then
+        OS_DISTRIBUTOR=$(lsb_release -si)
+        OS_RELEASE=$(lsb_release -sr)
+        OS_CODENAME=$(lsb_release -sc)
+        OS_DESCRIPTION=$(lsb_release -sd)
+    fi
+    if [ "$OS_CODENAME" == '' ]; then
+        msg -e "Unsupported host operating system."
+        exit 1
+    else
+        msg -i "OS_DISTRIBUTOR=$OS_DISTRIBUTOR"
+        msg -i "OS_CODENAME=$OS_CODENAME"
+        msg -i "OS_RELEASE=$OS_RELEASE"
+        msg -i "OS_DESCRIPTION=$OS_DESCRIPTION"
+    fi
+    [[ -d /sys/firmware/efi ]] && OS_BOOT_MODE=UEFI || OS_BOOT_MODE=BIOS
 }
 
 os-install()
@@ -427,121 +426,122 @@ os-install()
     #   install
     #   config
 	
-	[[ "${OS_PASSWORD}" == '' ]] && read -e -p "OS_PASSWORD=" -i "" OS_PASSWORD
-	[[ "${OS_HOSTNAME}" == '' ]] && read -e -p "OS_HOSTNAME=" -i "" OS_HOSTNAME
+    [[ "${OS_PASSWORD}" == '' ]] && read -e -p "OS_PASSWORD=" -i "" OS_PASSWORD
+    [[ "${OS_HOSTNAME}" == '' ]] && read -e -p "OS_HOSTNAME=" -i "" OS_HOSTNAME
 
-	case "$OS_CODENAME" in
-		bionic)
-			while (( "$#" )); do
-				case "$1" in
-					zfs-bootstrap)
-						# bootstrap zfs kernal modules
-						_exec "apt-get update"
-						_exec "apt-get install -y zfsutils"
-					;;
-					base)
-						# install base system
-						_exec "chmod 1777 /mnt/var/tmp"
-						_exec "apt-get install -y debootstrap"
-						_exec "debootstrap $OS_CODENAME /mnt"
-						_exec "zfs set devices=off $ZPOOL_POOL_NAME"
-					;;
-					config)
-						# config hostname
-						_exec 'printf "$OS_HOSTNAME" > /mnt/etc/hostname'
-						_exec 'printf "127.0.0.1  $OS_HOSTNAME" >> /mnt/etc/hosts'
-				
-						# network
-						_exec "cp /etc/resolv.conf /mnt/etc/resolv.conf"
-						
-						# FIXME better repo selection is required.
-						_exec "mkdir -p /mnt/etc/apt"
-						_exec "cp /etc/apt/sources.list /mnt/etc/apt/source.list"
-						
-						# fstab
-						_exec 'printf "/dev/zvol/$ZPOOL_POOL_NAME/swap\tnone\t\tswap\tdefaults\t0 0\n" >> /mnt/etc/fstab'
-						_exec 'printf "$ZPOOL_POOL_NAME/tmp\t\t/tmp\t\tzfs\tdefaults\t0 0\n" >> /mnt/etc/fstab'
-					;;
-					bind-host)
-						for d in proc sys dev; do
-							_exec "mount --rbind /${d} /mnt/${d}"
-						done
-					;;
-					unbind-host)
-						mount | grep -v zfs | tac | awk '/\/mnt/ {print $3}' | xargs -i{} umount -lf {} 
-					;;
-					chroot-login)
-						_exec chroot /mnt /bin/bash --login
-					;;
-					chroot-install)
-						_chroot_install() 
-						{   # Actual os install. 
-							
-							_exec "ln -s /proc/self/mounts /etc/mtab"
-							_exec "apt-get update"
-							_exec "apt-get upgrade -y"
+    case "$OS_CODENAME" in
+        bionic)
+            while (( "$#" )); do
+                case "$1" in
+                    zfs-bootstrap)
+                        # bootstrap zfs kernal modules
+                        _exec "apt-get update"
+                        _exec "apt-get install -y zfsutils"
+                    ;;
+                    base)
+                        # install base system
+                        _exec "chmod 1777 /mnt/var/tmp"
+                        _exec "apt-get install -y debootstrap"
+                        _exec "debootstrap $OS_CODENAME /mnt"
+                        _exec "zfs set devices=off $ZPOOL_POOL_NAME"
+                    ;;
+                    config)
+                        # config hostname
+                        _exec 'printf "$OS_HOSTNAME" > /mnt/etc/hostname'
+                        _exec 'printf "127.0.0.1  $OS_HOSTNAME" >> /mnt/etc/hosts'
+        
+                        # network
+                        _exec "cp /etc/resolv.conf /mnt/etc/resolv.conf"
+                    
+                        # FIXME better repo selection is required.
+                        _exec "mkdir -p /mnt/etc/apt"
+                        _exec "cp /etc/apt/sources.list /mnt/etc/apt/source.list"
+                        
+                        # fstab
+                        _exec 'printf "/dev/zvol/$ZPOOL_POOL_NAME/swap\tnone\t\tswap\tdefaults\t0 0\n" >> /mnt/etc/fstab'
+                        _exec 'printf "$ZPOOL_POOL_NAME/tmp\t\t/tmp\t\tzfs\tdefaults\t0 0\n" >> /mnt/etc/fstab'
+                    ;;
+                    bind-host)
+                        for d in proc sys dev; do
+                                _exec "mount --rbind /${d} /mnt/${d}"
+                        done
+                    ;;
+                    unbind-host)
+                        mount | grep -v zfs | tac | awk '/\/mnt/ {print $3}' | xargs -i{} umount -lf {} 
+                    ;;
+                    chroot-login)
+                        _exec chroot /mnt /bin/bash --login
+                    ;;
+                    chroot-install)
+                        _chroot_install() 
+                        {   # Actual os install. 
+                                        
+                            _exec "ln -s /proc/self/mounts /etc/mtab"
+                            _exec "apt-get update"
+                            _exec "apt-get upgrade -y"
 
-							# locale
-							_exec "locale-gen --purge"
-							_exec "echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale"
-							_exec "dpkg-reconfigure -f noninteractive locales"
-							
-							# timezone
-							_exec "echo 'Australia/Melbourne' > /etc/timezone"
-							_exec "dpkg-reconfigure  -f noninteractive tzdata"
-							
-							# install zfs in chroot
-							_exec "apt-get install -y --no-install-recommends linux-image-generic zfs-initramfs"
-							if [ -d /sys/firmware/efi ]; then
-								msg -i "GRUB:   UEFI install."
-								_exec "apt-get install -y dosfstools"
-								_exec "mkdir /boot/efi"
-								_exec "echo PARTUUID=$(blkid -s PARTUUID -o value ${ZPOOL_DISKS}) /boot/efi vfat noatime,nofail,x-systemd.device-timeout=1 0 1 >> /etc/fstab"
-								_exec "mount /boot/efi"
-								_exec "apt-get install --yes grub-efi-amd64"
-								_exec "grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ubuntu --recheck --no-floppy"
-							else
-								msg -i "GRUB:   BIOS install."
-								_exec "apt-get install -y grub-pc"
-								_exec "grub-install ${ZPOOL_DISKS}"
-							fi
+                            # locale
+                            _exec "locale-gen --purge"
+                            _exec "echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale"
+                            _exec "dpkg-reconfigure -f noninteractive locales"
+                            
+                            # timezone
+                            _exec "echo 'Australia/Melbourne' > /etc/timezone"
+                            _exec "dpkg-reconfigure  -f noninteractive tzdata"
+                            
+                            # install zfs in chroot
+                            _exec "apt-get install -y --no-install-recommends linux-image-generic zfs-initramfs"
+                            if [ -d /sys/firmware/efi ]; then
+                                msg -i "GRUB:   UEFI install."
+                                _exec "apt-get install -y dosfstools"
+                                _exec "mkdir /boot/efi"
+                                _exec "echo PARTUUID=$(blkid -s PARTUUID -o value ${ZPOOL_DISKS}) /boot/efi vfat noatime,nofail,x-systemd.device-timeout=1 0 1 >> /etc/fstab"
+                                _exec "mount /boot/efi"
+                                _exec "apt-get install --yes grub-efi-amd64"
+                                _exec "grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ubuntu --recheck --no-floppy"
+                            else
+                                msg -i "GRUB:   BIOS install."
+                                _exec "apt-get install -y grub-pc"
+                                _exec "grub-install ${ZPOOL_DISKS}"
+                            fi
 
-							# user accounts
-							_exec "addgroup --system lpadmin"
-							_exec "echo -e '${OS_PASSWORD}\n${OS_PASSWORD}' | passwd"
+                            # user accounts
+                            _exec "addgroup --system lpadmin"
+                            _exec "echo -e '${OS_PASSWORD}\n${OS_PASSWORD}' | passwd"
 
-							# test grub
-							_test_grub_root=$(grub-probe /)
-							if [ "$grub_test_root" == 'zfs' ]; then
-								msg -i "TEST_GRUB_ROOT:     PASS"
-							else
-								msg -i "TEST_GRUB_ROOT:     FAIL"
-							fi
-							_exec "update-initramfs -u -k all"
-							_exec "update-grub"
-							_test_grub_module=$(find /boot/grub/*/zfs.mod 2>1)
-							if [ "$_test_grub_module" != '' ]; then
-								msg -i "TEST_GRUB_MODULE:   FAIL"
-							else
-								msg -i "TEST_GRUB_MODULE:   PASS"
-							fi
-							msg -i "chroot install finished."
-							exit
-						}
-						export -f _chroot_install _exec _echo msg
-						_exec chroot /mnt /bin/bash -c "ZPOOL_DISKS=${ZPOOL_DISKS}; OS_PASSWORD=${OS_PASSWORD}; _chroot_install"
-					;;
-					cleanup)
-						msg -i "cleanup"
-						_exec "zfs umount -a"
-						_exec "swapoff -a"
-						_exec "zpool export $ZPOOL_POOL_NAME"
-					;;
-				esac
-				shift
-			done
-		;;
-	esac
+                            # test grub
+                            _test_grub_root=$(grub-probe /)
+                            if [ "$grub_test_root" == 'zfs' ]; then
+                                    msg -i "TEST_GRUB_ROOT:     PASS"
+                            else
+                                    msg -i "TEST_GRUB_ROOT:     FAIL"
+                            fi
+                            _exec "update-initramfs -u -k all"
+                            _exec "update-grub"
+                            _test_grub_module=$(find /boot/grub/*/zfs.mod 2>1)
+                            if [ "$_test_grub_module" != '' ]; then
+                                msg -i "TEST_GRUB_MODULE:   FAIL"
+                            else
+                                msg -i "TEST_GRUB_MODULE:   PASS"
+                            fi
+                            msg -i "chroot install finished."
+                            exit
+                        }
+                        
+                        export -f _chroot_install _exec _echo msg
+                        _exec chroot /mnt /bin/bash -c "ZPOOL_DISKS=${ZPOOL_DISKS}; OS_PASSWORD=${OS_PASSWORD}; _chroot_install"
+                    ;;
+                    cleanup)
+                        msg -i "cleanup"
+                        _exec "zfs umount -a"
+                        _exec "swapoff -a"
+                        _exec "zpool export $ZPOOL_POOL_NAME"
+                    ;;
+                esac
+                shift
+            done
+	;;
+    esac
 }
 
 _reboot()
@@ -566,7 +566,6 @@ disk destroy "${ZPOOL_DISKS}"
 disk format "${ZPOOL_DISKS}"
 
 read -e -p "ZPOOL_LAYOUT=" -i "${ZPOOL_DISKS}" ZPOOL_LAYOUT
-
 
 _zfs create 
 
