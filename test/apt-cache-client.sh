@@ -4,7 +4,7 @@ set -eux
 # configure APT to use our cache APT proxy.
 # see http://10.10.10.3:3142
 
-echo 'Acquire::http::Proxy "http://10.10.10.3:3142";' >/etc/apt/apt.conf.d/00aptproxy
+echo 'Acquire::http::Proxy "http://192.168.100.2:3142";' >/etc/apt/apt.conf.d/00aptproxy
 
 
 # use APT to see it using our APT proxy. 

@@ -3,22 +3,30 @@ vagrant_root = File.dirname(__FILE__)
 Vagrant.configure('2') do |config|
   config.vm.box = 'ubuntu/bionic64'
   config.vm.synced_folder "../src/", "/zfs-install"
-  
-  config.vm.provider :virtualbox |vb|
-    vb.linked_clone = true
-    vb.customize ['modifyvm', :id, '--cableconnected1', 'on']
-    vb.memory = 256 
-  end
+  config.vm.boot_timeout = 60
+
+  config.vm.synced_folder "../src/", "/zfs-install"
+
+
 
   config.vm.define :apt_cache do |apt_cache|
     apt_cache.vm.hostname = "apt-cache"
-    apt_cache.vm.network :private_network, ip: '10.10.10.3'
+    apt_cache.vm.network :private_network, ip: '192.168.100.2'
     apt_cache.vm.provision :shell, path: 'apt-cache-server.sh'
   end 
-
+  
   config.vm.define :ubuntu_bionic64 do |ubuntu_bionic64|
-    ubuntu_bionic64.vm.hostname = 'ubuntu-bionic64' 
-    ubuntu_bionic64.vm.network :private_network, ip: '10.10.10.5'
+    ubuntu_bionic64.vm.hostname = 'ubuntu-bionic64'
+    
+    config.vm.provider "virtualbox" do |vb|
+      file_to_disk = vagrant_root + "/disk/zfs-root.vmdk"
+      unless File.exist?(file_to_disk)
+        vb.customize ['createmedium', '--filename', file_to_disk, '--size', 30 * 1024, "--format", "VMDK"]
+      end
+      vb.customize ['storageattach', :id, '--storagectl', 'SCSI', '--port', 2, '--device', 0, '--type', 'hdd', '--medium', file_to_disk]
+    end
+
+    ubuntu_bionic64.vm.network :private_network, ip: "192.168.100.3" 
     ubuntu_bionic64.vm.provision :shell, path: 'apt-cache-client.sh'
     ubuntu_bionic64.vm.provision :shell, path: 'ubuntu_bionic64.sh'
   end 
