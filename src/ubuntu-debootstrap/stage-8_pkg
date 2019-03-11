@@ -1,0 +1,4 @@
+apt dist-upgrade --yes
+apt install --yes ubuntu-standard
+apt install vim tmux i3 tilda git
+apt install --yes xorg network-manager

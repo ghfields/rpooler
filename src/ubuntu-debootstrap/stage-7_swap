@@ -1,0 +1,12 @@
+ZPOOL_NAME=nomad
+ZPOOL_SWAP_SIZE='12G'
+zfs create -V $ZPOOL_SWAP_SIZE -b $(getconf PAGESIZE) -o compression=zle \
+      -o logbias=throughput -o sync=always \
+      -o primarycache=metadata -o secondarycache=none \
+      -o com.sun:auto-snapshot=false $ZPOOL_NAME/swap
+
+mkswap -f /dev/zvol/$ZPOOL_NAME/swap
+echo /dev/zvol/$ZPOOL_NAME/swap none swap defaults 0 0 >> /etc/fstab
+echo RESUME=none > /etc/initramfs-tools/conf.d/resume
+
+swapon -aV

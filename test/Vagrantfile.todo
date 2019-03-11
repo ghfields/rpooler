@@ -1,0 +1,26 @@
+vagrant_root = File.dirname(__FILE__)
+
+Vagrant.configure('2') do |config|
+  config.vm.box = 'ubuntu/bionic64'
+  config.vm.synced_folder "../src/", "/zfs-install"
+  
+  config.vm.provider :virtualbox do |vb|
+    vb.linked_clone = true
+    vb.customize ['modifyvm', :id, '--cableconnected1', 'on']
+    vb.memory = 256 
+  end
+
+  config.vm.define :apt_cache do |apt_cache|
+    apt_cache.vm.hostname = "apt-cache"
+    apt_cache.vm.network :private_network, ip: '192.168.100.1'
+    apt_cache.vm.provision :shell, path: 'apt-cache-server.sh'
+  end 
+
+  config.vm.define :ubuntu_bionic64 do |ubuntu_bionic64|
+    ubuntu_bionic64.vm.hostname = 'ubuntu-bionic64' 
+    ubuntu_bionic64.vm.network :private_network, ip: '192.168.100.2'
+    ubuntu_bionic64.vm.provision :shell, path: 'apt-cache-client.sh'
+    ubuntu_bionic64.vm.provision :shell, path: 'ubuntu_bionic64.sh'
+  end 
+
+end
